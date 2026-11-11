@@ -1,16 +1,22 @@
 const { Pool } = require('pg');
 require('dotenv').config();
 
-const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+// SSL Certificate Chain စစ်ဆေးမှုကို ကျော်လွှားရန်
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
+let connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL || '';
+// URL ထဲရှိ sslmode ကြောင့် pg က rejectUnauthorized ပြန်ဖွင့်သွားခြင်းကို တားဆီးရန်
+connectionString = connectionString.replace(/[?&]sslmode=[^&]+/g, '');
 
 const pool = new Pool({
   connectionString: connectionString,
-  ssl: { rejectUnauthorized: false }
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
 
 const query = (text, params) => pool.query(text, params);
 
-// parcels ဇယားတွင် အမှန်တကယ်ရှိသော Column များကိုသာ တိကျစွာ ခေါ်ယူခြင်း
 async function getParcelTracking(trackingNumber) {
   const queryText = `
     SELECT p.tracking_number, p.recipient_name, p.status, p.destination_hub,

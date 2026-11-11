@@ -105,16 +105,17 @@ async function findParcelByTracking(trackingNumber) {
   if (!db) return null;
   try {
     const cleanNo = trackingNumber.trim().toUpperCase();
-    // Supabase ဇယားနှင့် တိကျစွာ ကိုက်ညီသော Query
+    console.log("Searching for tracking number:", cleanNo);
+    
+    // Hubs table နှင့် JOIN မလုပ်ဘဲ parcels ဇယားမှ တိုက်ရိုက်ဆွဲထုတ်ခြင်း
     const queryText = `
-      SELECT p.tracking_number, p.recipient_name, p.status, p.destination_hub,
-             h.name as current_hub_name
-      FROM parcels p
-      LEFT JOIN hubs h ON p.current_hub_id = h.id
-      WHERE UPPER(TRIM(p.tracking_number)) = $1
+      SELECT tracking_number, recipient_name, status, destination_hub, current_hub_id
+      FROM parcels
+      WHERE UPPER(TRIM(tracking_number)) = $1
       LIMIT 1;
     `;
     const res = await db.query(queryText, [cleanNo]);
+    console.log("Database result:", res.rows);
     return res.rows?.[0] || null;
   } catch (err) {
     console.error('Database Query Error:', err.message);
