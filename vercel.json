@@ -1,5 +1,12 @@
 {
+  "version": 2,
   "trailingSlash": true,
+  "rewrites": [
+    {
+      "source": "/webhook/(.*)",
+      "destination": "/api/index.js"
+    }
+  ],
   "headers": [
     {
       "source": "/sw.js",
