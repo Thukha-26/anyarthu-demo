@@ -45,9 +45,6 @@ app.get('/webhook/messenger', (req, res) => {
 // 2. Messenger Webhook Handler (POST)
 // ------------------------------------------------------------------
 app.post('/webhook/messenger', async (req, res) => {
-  // Facebook Timeout (300s) မဖြစ်စေရန် ချက်ချင်း 200 OK အရင်ပြန်ပို့ပါ
-  res.status(200).send('EVENT_RECEIVED');
-
   try {
     const body = req.body;
 
@@ -58,7 +55,6 @@ app.post('/webhook/messenger', async (req, res) => {
         }
 
         for (const webhookEvent of entry.messaging) {
-          // Delivery/Read receipts များကို ကျော်လွှားပြီး Text Message သာ လက်ခံမည်
           if (webhookEvent && webhookEvent.message && webhookEvent.message.text) {
             const senderId = webhookEvent.sender?.id;
             const userText = webhookEvent.message.text.trim();
@@ -73,19 +69,18 @@ app.post('/webhook/messenger', async (req, res) => {
   } catch (err) {
     console.error('Messenger Webhook Error:', err);
   }
+
+  return res.status(200).send('EVENT_RECEIVED');
 });
 
 // ------------------------------------------------------------------
 // 3. Viber Webhook Handler (POST)
 // ------------------------------------------------------------------
 app.post('/webhook/viber', async (req, res) => {
-  res.status(200).send('OK');
-
   try {
     const body = req.body;
     if (body && body.event === 'webhook') {
-      console.log('Viber Webhook Registered:', body);
-      return;
+      return res.status(200).send('OK');
     }
 
     if (body && body.event === 'message' && body.message && body.message.text) {
@@ -99,6 +94,8 @@ app.post('/webhook/viber', async (req, res) => {
   } catch (err) {
     console.error('Viber Webhook Error:', err);
   }
+
+  return res.status(200).send('OK');
 });
 
 // ------------------------------------------------------------------
@@ -108,13 +105,14 @@ async function findParcelByTracking(trackingNumber) {
   if (!db) return null;
   try {
     const cleanNo = trackingNumber.trim().toUpperCase();
+    // Supabase ဇယားနှင့် တိကျစွာ ကိုက်ညီသော Query
     const queryText = `
-      SELECT p.*, h1.name as current_hub_name, h2.name as destination_hub_name
+      SELECT p.tracking_number, p.recipient_name, p.status, p.destination_hub,
+             h.name as current_hub_name
       FROM parcels p
-      LEFT JOIN hubs h1 ON p.current_hub_id = h1.id
-      LEFT JOIN hubs h2 ON p.destination_hub_id = h2.id
-      WHERE UPPER(p.tracking_number) = $1
-      LIMIT 1
+      LEFT JOIN hubs h ON p.current_hub_id = h.id
+      WHERE UPPER(TRIM(p.tracking_number)) = $1
+      LIMIT 1;
     `;
     const res = await db.query(queryText, [cleanNo]);
     return res.rows?.[0] || null;
@@ -130,10 +128,10 @@ function formatTrackingReply(parcel, rawInput) {
   }
 
   const trackingNo = parcel.tracking_number || rawInput;
-  const receiver = parcel.receiver_name || parcel.recipient_name || 'စမ်းသပ်သူ';
+  const receiver = parcel.recipient_name || 'စမ်းသပ်သူ';
   const status = parcel.status || 'သတ်မှတ်ဆဲ';
-  const currentHub = parcel.current_hub_name || parcel.current_hub || 'ပင်မရုံးခွဲ';
-  const destHub = parcel.destination_hub_name || parcel.destination_hub || 'မန္တလေး';
+  const currentHub = parcel.current_hub_name || 'မန္တလေး ရုံးခွဲ';
+  const destHub = parcel.destination_hub || 'မန္တလေး';
 
   return `📦 ပါဆယ်နံပါတ်: ${trackingNo}\n👤 လက်ခံသူ: ${receiver}\n🚚 အခြေအနေ: ${status}\n🏢 လက်ရှိရုံး: ${currentHub}\n📍 ပန်းတိုင်: ${destHub}`;
 }
@@ -167,13 +165,10 @@ async function handleViberMessage(senderId, text) {
 }
 
 // ------------------------------------------------------------------
-// 5. Sending APIs (Facebook Graph API & Viber Chat API)
+// 5. Sending APIs
 // ------------------------------------------------------------------
 async function sendFacebookMessage(recipientId, text) {
-  if (!FB_PAGE_ACCESS_TOKEN) {
-    console.error('FB_PAGE_ACCESS_TOKEN is missing in environment variables.');
-    return;
-  }
+  if (!FB_PAGE_ACCESS_TOKEN) return;
   try {
     await axios.post(
       `https://graph.facebook.com/v21.0/me/messages?access_token=${FB_PAGE_ACCESS_TOKEN}`,
@@ -189,10 +184,7 @@ async function sendFacebookMessage(recipientId, text) {
 }
 
 async function sendViberMessage(receiverId, text) {
-  if (!VIBER_AUTH_TOKEN) {
-    console.error('VIBER_AUTH_TOKEN is missing.');
-    return;
-  }
+  if (!VIBER_AUTH_TOKEN) return;
   try {
     await axios.post(
       'https://chatapi.viber.com/pa/send_message',
@@ -206,13 +198,11 @@ async function sendViberMessage(receiverId, text) {
         headers: { 'X-Viber-Auth-Token': VIBER_AUTH_TOKEN }
       }
     );
-    console.log(`Viber message sent to ${receiverId}`);
   } catch (err) {
     console.error('Viber Send Error:', err.response?.data || err.message);
   }
 }
 
-// Static HTML fallback (လိုအပ်ပါက)
 app.use(express.static(path.join(__dirname, '../')));
 
 module.exports = app;

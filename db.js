@@ -8,8 +8,11 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
+// db.query ကို api/index.js မှ တိုက်ရိုက်ခေါ်သုံးနိုင်ရန် export လုပ်ပေးခြင်း
+const query = (text, params) => pool.query(text, params);
+
 async function getParcelTracking(trackingNumber) {
-  const query = `
+  const queryText = `
     SELECT p.tracking_number, p.recipient_name, p.status, p.destination_hub,
            h.name as current_hub_name, p.updated_at
     FROM parcels p
@@ -17,28 +20,12 @@ async function getParcelTracking(trackingNumber) {
     WHERE UPPER(p.tracking_number) = UPPER($1)
     LIMIT 1;
   `;
-  const res = await pool.query(query, [trackingNumber.trim()]);
+  const res = await pool.query(queryText, [trackingNumber.trim()]);
   return res.rows[0] || null;
 }
 
-async function createPickupRequest(data) {
-  const query = `
-    INSERT INTO pickup_requests (sender_name, sender_phone, address, township, hub_id, item_qty, status, created_at)
-    VALUES ($1, $2, $3, $4, $5, $6, 'PENDING', NOW())
-    RETURNING id;
-  `;
-  const res = await pool.query(query, [
-    data.name,
-    data.phone,
-    data.address,
-    data.township,
-    data.hubId || 'YGN',
-    data.qty || 1
-  ]);
-  return res.rows[0].id;
-}
-
 module.exports = {
-  getParcelTracking,
-  createPickupRequest
+  pool,
+  query,
+  getParcelTracking
 };
