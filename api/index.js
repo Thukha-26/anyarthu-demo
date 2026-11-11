@@ -1,116 +1,218 @@
 const express = require('express');
 const axios = require('axios');
-const { getParcelTracking, createPickupRequest } = require('../db');
-require('dotenv').config();
+const path = require('path');
+
+// Root folder ရှိ db.js အား ချိတ်ဆက်ခြင်း
+let db;
+try {
+  db = require('../db');
+} catch (e) {
+  try {
+    db = require('./db');
+  } catch (err) {
+    console.warn('Database module could not be loaded directly:', err.message);
+  }
+}
 
 const app = express();
 app.use(express.json());
 
+// Environment Variables
 const FB_PAGE_ACCESS_TOKEN = process.env.FB_PAGE_ACCESS_TOKEN;
 const FB_VERIFY_TOKEN = process.env.FB_VERIFY_TOKEN || 'anyarthu_free_token_2026';
 const VIBER_AUTH_TOKEN = process.env.VIBER_AUTH_TOKEN;
 
-app.get('/webhook/health', (req, res) => {
-  res.json({ status: 'ok', service: 'Anyarthu Unified Webhook Backend' });
-});
-
-// Facebook Messenger Verification (GET Request)
-app.get(['/webhook/messenger', '/api/messenger'], (req, res) => {
+// ------------------------------------------------------------------
+// 1. Messenger Webhook Verification (GET)
+// ------------------------------------------------------------------
+app.get('/webhook/messenger', (req, res) => {
   const mode = req.query['hub.mode'];
   const token = req.query['hub.verify_token'];
   const challenge = req.query['hub.challenge'];
 
-  if (mode && token === FB_VERIFY_TOKEN) {
-    return res.status(200).send(challenge);
+  if (mode && token) {
+    if (mode === 'subscribe' && token === FB_VERIFY_TOKEN) {
+      console.log('FB Webhook Verified successfully.');
+      return res.status(200).send(challenge);
+    } else {
+      return res.sendStatus(403);
+    }
   }
-  return res.sendStatus(403);
+  res.sendStatus(400);
 });
 
-// Facebook Messenger Message Handler (POST Request)
-app.post(['/webhook/messenger', '/api/messenger'], async (req, res) => {
-  const body = req.body;
-  if (body.object === 'page') {
-    for (let entry of body.entry) {
-      const event = entry.messaging[0];
-      const senderId = event.sender.id;
+// ------------------------------------------------------------------
+// 2. Messenger Webhook Handler (POST)
+// ------------------------------------------------------------------
+app.post('/webhook/messenger', async (req, res) => {
+  // Facebook Timeout (300s) မဖြစ်စေရန် ချက်ချင်း 200 OK အရင်ပြန်ပို့ပါ
+  res.status(200).send('EVENT_RECEIVED');
 
-      if (event.message && event.message.text) {
-        const text = event.message.text.trim();
-        const upper = text.toUpperCase();
+  try {
+    const body = req.body;
 
-        if (upper.startsWith("AT-") || upper.startsWith("DX-") || upper.startsWith("TEST-")) {
-          const parcel = await getParcelTracking(text);
-          if (parcel) {
-            const reply = `📦 ပါဆယ်နံပါတ်: ${parcel.tracking_number}\n` +
-                          `👤 လက်ခံသူ: ${parcel.recipient_name}\n` +
-                          `🚚 အခြေအနေ: ${parcel.status}\n` +
-                          `🏢 လက်ရှိရုံး: ${parcel.current_hub_name || 'လမ်းခရီးတွင်'}\n` +
-                          `📍 ပန်းတိုင်: ${parcel.destination_hub}`;
-            await sendMessenger(senderId, reply);
-          } else {
-            await sendMessenger(senderId, `❌ နံပါတ် "${text}" အား စနစ်ထဲတွင် ရှာမတွေ့ပါ။ Tracking Number ကို ပြန်လည်စစ်ဆေးပေးပါရှင်။`);
+    if (body && body.object === 'page' && Array.isArray(body.entry)) {
+      for (const entry of body.entry) {
+        if (!entry || !Array.isArray(entry.messaging)) {
+          continue;
+        }
+
+        for (const webhookEvent of entry.messaging) {
+          // Delivery/Read receipts များကို ကျော်လွှားပြီး Text Message သာ လက်ခံမည်
+          if (webhookEvent && webhookEvent.message && webhookEvent.message.text) {
+            const senderId = webhookEvent.sender?.id;
+            const userText = webhookEvent.message.text.trim();
+
+            if (senderId && userText) {
+              await handleFacebookMessage(senderId, userText);
+            }
           }
-        } else {
-          await sendMessenger(senderId, "မင်္ဂလာပါရှင်။ အညာသူ Express မှ ကြိုဆိုပါတယ်။ ပါဆယ်စစ်ဆေးရန် Tracking နံပါတ် (ဥပမာ- AT-2611-00492 သို့မဟုတ် TEST-001) ကို ရိုက်ပို့ပေးပါရှင်။");
         }
       }
     }
-    return res.status(200).send('EVENT_RECEIVED');
+  } catch (err) {
+    console.error('Messenger Webhook Error:', err);
   }
-  return res.sendStatus(404);
 });
 
-async function sendMessenger(recipientId, text) {
+// ------------------------------------------------------------------
+// 3. Viber Webhook Handler (POST)
+// ------------------------------------------------------------------
+app.post('/webhook/viber', async (req, res) => {
+  res.status(200).send('OK');
+
   try {
-    await axios.post(`https://graph.facebook.com/v19.0/me/messages?access_token=${FB_PAGE_ACCESS_TOKEN}`, {
-      recipient: { id: recipientId },
-      message: { text }
-    });
+    const body = req.body;
+    if (body && body.event === 'webhook') {
+      console.log('Viber Webhook Registered:', body);
+      return;
+    }
+
+    if (body && body.event === 'message' && body.message && body.message.text) {
+      const senderId = body.sender?.id;
+      const userText = body.message.text.trim();
+
+      if (senderId && userText) {
+        await handleViberMessage(senderId, userText);
+      }
+    }
   } catch (err) {
-    console.error('FB Send Error:', err.response?.data || err.message);
+    console.error('Viber Webhook Error:', err);
+  }
+});
+
+// ------------------------------------------------------------------
+// 4. Message Processing & Database Tracking Logic
+// ------------------------------------------------------------------
+async function findParcelByTracking(trackingNumber) {
+  if (!db) return null;
+  try {
+    const cleanNo = trackingNumber.trim().toUpperCase();
+    const queryText = `
+      SELECT p.*, h1.name as current_hub_name, h2.name as destination_hub_name
+      FROM parcels p
+      LEFT JOIN hubs h1 ON p.current_hub_id = h1.id
+      LEFT JOIN hubs h2 ON p.destination_hub_id = h2.id
+      WHERE UPPER(p.tracking_number) = $1
+      LIMIT 1
+    `;
+    const res = await db.query(queryText, [cleanNo]);
+    return res.rows?.[0] || null;
+  } catch (err) {
+    console.error('Database Query Error:', err.message);
+    return null;
   }
 }
 
-// Viber Chatbot Webhook (POST Request)
-app.post(['/webhook/viber', '/api/viber'], async (req, res) => {
-  const body = req.body;
-  if (body.event === 'message') {
-    const senderId = body.sender.id;
-    const text = body.message.text ? body.message.text.trim() : "";
-    const upper = text.toUpperCase();
-
-    if (upper.startsWith("AT-") || upper.startsWith("DX-") || upper.startsWith("TEST-")) {
-      const parcel = await getParcelTracking(text);
-      if (parcel) {
-        const reply = `📦 ပါဆယ်နံပါတ်: ${parcel.tracking_number}\n` +
-                      `👤 လက်ခံသူ: ${parcel.recipient_name}\n` +
-                      `🚚 အခြေအနေ: ${parcel.status}\n` +
-                      `🏢 လက်ရှိရုံး: ${parcel.current_hub_name || 'လမ်းခရီးတွင်'}\n` +
-                      `📍 ပန်းတိုင်: ${parcel.destination_hub}`;
-        await sendViber(senderId, reply);
-      } else {
-        await sendViber(senderId, `❌ နံပါတ် "${text}" အား စနစ်ထဲတွင် ရှာမတွေ့ပါရှင်။`);
-      }
-    } else {
-      await sendViber(senderId, "မင်္ဂလာပါရှင်။ အညာသူ Express မှ ကြိုဆိုပါတယ်။ စစ်ဆေးလိုသော Tracking နံပါတ် (ဥပမာ- AT-2611-00492 သို့မဟုတ် TEST-001) ကို ရိုက်ပို့ပေးပါရှင်။");
-    }
+function formatTrackingReply(parcel, rawInput) {
+  if (!parcel) {
+    return `❌ နံပါတ် "${rawInput}" အား စနစ်ထဲတွင် ရှာမတွေ့ပါ။ Tracking Number ကို ပြန်လည်စစ်ဆေးပေးပါရှင်။`;
   }
-  return res.status(200).send('OK');
-});
 
-async function sendViber(receiverId, text) {
+  const trackingNo = parcel.tracking_number || rawInput;
+  const receiver = parcel.receiver_name || parcel.recipient_name || 'စမ်းသပ်သူ';
+  const status = parcel.status || 'သတ်မှတ်ဆဲ';
+  const currentHub = parcel.current_hub_name || parcel.current_hub || 'ပင်မရုံးခွဲ';
+  const destHub = parcel.destination_hub_name || parcel.destination_hub || 'မန္တလေး';
+
+  return `📦 ပါဆယ်နံပါတ်: ${trackingNo}\n👤 လက်ခံသူ: ${receiver}\n🚚 အခြေအနေ: ${status}\n🏢 လက်ရှိရုံး: ${currentHub}\n📍 ပန်းတိုင်: ${destHub}`;
+}
+
+async function handleFacebookMessage(senderId, text) {
+  let replyText = '';
+  const cleanInput = text.trim();
+
+  if (cleanInput === 'မင်္ဂလာပါ' || cleanInput.toLowerCase() === 'hi' || cleanInput.toLowerCase() === 'hello') {
+    replyText = 'မင်္ဂလာပါရှင်။ အညာသူ Express မှ ကြိုဆိုပါတယ်။ ပါဆယ်စစ်ဆေးရန် Tracking နံပါတ် (ဥပမာ- TEST-001 သို့မဟုတ် AT-2611-00492) ကို ရိုက်ပို့ပေးပါရှင်။';
+  } else {
+    const parcel = await findParcelByTracking(cleanInput);
+    replyText = formatTrackingReply(parcel, cleanInput);
+  }
+
+  await sendFacebookMessage(senderId, replyText);
+}
+
+async function handleViberMessage(senderId, text) {
+  let replyText = '';
+  const cleanInput = text.trim();
+
+  if (cleanInput === 'မင်္ဂလာပါ' || cleanInput.toLowerCase() === 'hi') {
+    replyText = 'မင်္ဂလာပါရှင်။ အညာသူ Express Tracking Bot မှ ကြိုဆိုပါတယ်။ ပါဆယ်စစ်ဆေးရန် Tracking နံပါတ် ရိုက်ထည့်ပေးပါရှင်။';
+  } else {
+    const parcel = await findParcelByTracking(cleanInput);
+    replyText = formatTrackingReply(parcel, cleanInput);
+  }
+
+  await sendViberMessage(senderId, replyText);
+}
+
+// ------------------------------------------------------------------
+// 5. Sending APIs (Facebook Graph API & Viber Chat API)
+// ------------------------------------------------------------------
+async function sendFacebookMessage(recipientId, text) {
+  if (!FB_PAGE_ACCESS_TOKEN) {
+    console.error('FB_PAGE_ACCESS_TOKEN is missing in environment variables.');
+    return;
+  }
   try {
-    await axios.post('https://chatapi.viber.com/pa/send_message', {
-      receiver: receiverId,
-      type: 'text',
-      text: text,
-      sender: { name: "အညာသူ Express" }
-    }, {
-      headers: { 'X-Viber-Auth-Token': VIBER_AUTH_TOKEN }
-    });
+    await axios.post(
+      `https://graph.facebook.com/v21.0/me/messages?access_token=${FB_PAGE_ACCESS_TOKEN}`,
+      {
+        recipient: { id: recipientId },
+        message: { text: text }
+      }
+    );
+    console.log(`FB message sent to ${recipientId}`);
+  } catch (err) {
+    console.error('Facebook Send Error:', err.response?.data || err.message);
+  }
+}
+
+async function sendViberMessage(receiverId, text) {
+  if (!VIBER_AUTH_TOKEN) {
+    console.error('VIBER_AUTH_TOKEN is missing.');
+    return;
+  }
+  try {
+    await axios.post(
+      'https://chatapi.viber.com/pa/send_message',
+      {
+        receiver: receiverId,
+        type: 'text',
+        text: text,
+        sender: { name: 'အညာသူ Express' }
+      },
+      {
+        headers: { 'X-Viber-Auth-Token': VIBER_AUTH_TOKEN }
+      }
+    );
+    console.log(`Viber message sent to ${receiverId}`);
   } catch (err) {
     console.error('Viber Send Error:', err.response?.data || err.message);
   }
 }
+
+// Static HTML fallback (လိုအပ်ပါက)
+app.use(express.static(path.join(__dirname, '../')));
 
 module.exports = app;
