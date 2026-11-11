@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="my">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>အညာသူ Express Cargo — Project Proposal</title>
+<meta name="description" content="Delivery Tracking System — Project Proposal & Quotation (Q-AT-2026-007) by Team Thukha">
+<link rel="icon" href="../logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Myanmar:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+@font-face{font-family:'A Test';src:url('/fonts/ATest-Light.ttf') format('truetype');font-weight:100 900;font-display:swap;unicode-range:U+1000-109F,U+A9E0-A9FF,U+AA60-AA7F,U+200B-200D}
+:root{--bg:#F6F2E6;--surface:#fff;--soft:#FBF7EA;--ink:#1B2768;--muted:#505A80;--line:#E6DEC6;--brand:#27378F;--brand-deep:#1B2768;--gold:#E7C468;--gold-deep:#C2922F;--gold-bg:#FBEFC9;--gold-fg:#6B4E00;--blue-bg:#DFE5FA;--green-fg:#1C5F2B;--shadow:0 10px 30px rgba(27,39,104,.09)}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,'A Test','Noto Sans Myanmar',sans-serif;line-height:1.85;font-size:15.5px}
+a{color:var(--brand)}
+.wrap{max-width:960px;margin:0 auto;padding:0 16px}
+header.hero{background:linear-gradient(135deg,var(--brand-deep),var(--brand));color:#fff;padding:44px 0 56px}
+.hero .top{display:flex;align-items:center;gap:14px;margin-bottom:26px}
+.hero img{width:56px;height:56px;border-radius:14px;background:#fff;padding:4px;object-fit:contain}
+.hero .tag{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--gold)}
+.hero h1{font-size:clamp(24px,4.4vw,36px);line-height:1.45;margin:0 0 6px}
+.hero p{margin:0;opacity:.9}
+.meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:24px}
+.meta div{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:10px 14px;font-size:14px}
+.meta b{display:block;color:var(--gold);font-size:12px;font-weight:600}
+.cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
+.btn{display:inline-flex;align-items:center;gap:8px;min-height:46px;padding:0 20px;border-radius:13px;font-weight:700;text-decoration:none;background:var(--gold);color:var(--brand-deep);border:0;cursor:pointer;font:inherit;font-weight:700}
+.btn.line{background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.5)}
+nav.toc{position:sticky;top:0;z-index:5;background:rgba(246,242,230,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+nav.toc .wrap{display:flex;gap:6px;overflow-x:auto;padding-top:8px;padding-bottom:8px;scrollbar-width:none}
+nav.toc a{flex:none;font-size:13px;text-decoration:none;padding:4px 12px;border-radius:99px;background:var(--surface);border:1px solid var(--line);white-space:nowrap}
+main{padding:28px 0 60px}
+section{background:var(--surface);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);padding:26px 24px;margin-bottom:20px;scroll-margin-top:64px}
+h2{font-size:20px;line-height:1.6;margin:0 0 14px;display:flex;gap:10px;align-items:baseline}
+h2 .n{color:var(--gold-deep)}
+h3{font-size:16px;margin:20px 0 8px}
+p{margin:0 0 12px}
+ul{margin:0 0 12px;padding-left:22px}li{margin-bottom:4px}
+.note{background:var(--gold-bg);color:var(--gold-fg);border-radius:12px;padding:12px 16px;font-size:14.5px;margin:12px 0}
+.pick{background:var(--blue-bg);border-radius:12px;padding:14px 16px;font-weight:600}
+.tbl{overflow-x:auto;margin:10px 0 14px;border:1px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;font-size:14.5px;min-width:520px}
+th,td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{background:var(--soft);font-weight:700}
+tr:last-child td{border-bottom:0}
+td.c,th.c{text-align:center}td.r,th.r{text-align:right;white-space:nowrap}
+.yes{color:var(--green-fg);font-weight:700}
+tr.total td{font-weight:700;background:var(--soft)}
+.star{color:var(--gold-deep)}
+.sign{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:18px;margin-top:20px}
+.sign div{border-bottom:1.5px solid var(--muted);padding-top:36px;font-size:13px;color:var(--muted)}
+footer{text-align:center;color:var(--muted);font-size:13px;padding:0 0 40px}
+@media print{nav.toc,.cta,.noprint{display:none!important}body{background:#fff;font-size:12.5px}section{box-shadow:none;break-inside:auto}header.hero{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="wrap">
+    <div class="top"><img src="../logo.png" alt=""><div><div class="tag">Project Proposal &amp; Quotation</div><div style="font-size:14px;opacity:.85">10 Nov 2026 · Team Thukha</div></div></div>
+    <h1>အညာသူ Express Cargo — Delivery Tracking System</h1>
+    <p>Website + Online Booking + Shipment Tracking System</p>
+    <div class="meta">
+      <div><b>Prepared for</b><a href="https://web.facebook.com/profile.php?id=100094118717190" target="_blank" rel="noopener" style="color:#fff">အညာသူ Express Cargo Service ↗</a> (Aung Shining Star Co., Ltd)</div>
+      <div><b>Prepared by</b>Team Thukha — Web Development Team</div>
+      <div><b>Quotation No.</b>Q-AT-2026-007 · Valid until 01 Dec 2026</div>
+    </div>
+    <div class="cta">
+      <a class="btn" href="../?intro">▶ Demo ကို စမ်းသုံးရန်</a>
+      <a class="btn line" href="Anyarthu-Express-Cargo-Proposal.docx" download>⬇ Proposal (.docx)</a>
+      <a class="btn line" href="https://web.facebook.com/profile.php?id=100094118717190" target="_blank" rel="noopener">ⓕ အညာသူ Facebook Page</a>
+      <button class="btn line" onclick="print()">🖨 Print / PDF</button>
+    </div>
+  </div>
+</header>
+
+<nav class="toc" aria-label="Contents"><div class="wrap">
+  <a href="#s1">၁။ အကျဉ်းချုပ်</a><a href="#s2">၂။ ဖြေရှင်းချက်</a><a href="#s3">၃။ Demo</a><a href="#s4">၄။ Feature</a><a href="#s5">၅။ Package</a><a href="#s6">၆။ Add-on</a><a href="#s7">၇။ လစဉ်</a><a href="#s8">၈။ ပထမနှစ်</a><a href="#s9">၉။ အချိန်ဇယား</a><a href="#s10">၁၀။ နည်းပညာ</a><a href="#s11">၁၁။ Project များ</a><a href="#s12">၁၂။ Quotation</a><a href="#s13">၁၃။ စည်းကမ်း</a><a href="#s14">၁၄။ နောက်တစ်ဆင့်</a>
+</div></nav>
+
+<main class="wrap">
+
+<section id="s1"><h2><span class="n">၁။</span>အကျဉ်းချုပ်</h2>
+<p>အညာသူ Express Cargo သည် ရုံးခွဲ ၃ ခု (ရန်ကုန် / စစ်ကိုင်း / အောင်လံ) နှင့် ထိုင်း၊ ကိုရီးယား၊ ဂျပန်၊ ထိုင်ဝမ်၊ တရုတ် လမ်းကြောင်းများကို အိမ်အရောက် ပို့ဆောင်ပေးနေသော လုပ်ငန်းကြီးတစ်ခုဖြစ်သည်။ လက်ရှိတွင် စုံစမ်းမှု၊ ပစ္စည်းစာရင်း၊ ကီလိုဘောက်ချာ၊ ငွေပေးချေမှုနှင့် ပစ္စည်းရောက်ကြောင်း အသိပေးခြင်း အားလုံးကို Messenger၊ Viber၊ ဖုန်းနှင့် လက်ရေးစာရင်း ဓာတ်ပုံများဖြင့် လူကိုယ်တိုင် လုပ်ဆောင်နေရပါသည်။</p>
+<p>ကျွန်ုပ်တို့သည် အညာသူ၏ လက်ရှိ လုပ်ငန်းစဉ်အတိုင်း (စာရင်းအရင်ပို့ → အတည်ပြု → ကီလိုဘောက်ချာနှင့် ငွေချေ → ထုပ်ပိုး → ကား/လေယာဉ်တင် → ရောက်ရှိ) ကို မပြောင်းလဲဘဲ အွန်လိုင်းပေါ် တင်ပေးမည့် Website + Online Booking + Shipment Tracking System ကို အဆိုပြုပါသည်။</p>
+<div class="pick">⭐ အကြံပြု Package: Business Cargo — 3,500,000 Ks (တစ်ကြိမ်) · ပြီးစီးချိန် ၄–၆ ပတ်<br><span style="font-weight:500">လစဉ် All-in starts 2500 THB (Website Subscription များမပါ)</span></div>
+</section>
+
+<section id="s2"><h2><span class="n">၂။</span>လက်ရှိအခြေအနေနှင့် ဖြေရှင်းပေးမည့်အရာများ</h2>
+<div class="tbl"><table>
+<tr><th>လက်ရှိအခြေအနေ</th><th>System ဖြင့် ဖြေရှင်းပုံ</th></tr>
+<tr><td>ပစ္စည်းရောက်ကြောင်းကို လက်ရေးစာရင်း ဓာတ်ပုံဖြင့် တင်ရသည် (ဥပမာ ကားတစ်စီးလျှင် ၆၆ ဦးစာ)</td><td>ကား/လေယာဉ် တစ်စီးချင်းကို Shipment Batch အဖြစ် ဖွင့်၍ တစ်ချက်နှိပ်ရုံဖြင့် ပါဆယ်အားလုံး Status ပြောင်းသည်။ Customer တစ်ဦးချင်း မိမိပစ္စည်းကို ကိုယ်တိုင် ကြည့်နိုင်သည်</td></tr>
+<tr><td>"ပစ္စည်း ဘယ်ရောက်ပြီလဲ" မေးခွန်းများကို Messenger တွင် တစ်ခုချင်း ဖြေရသည်</td><td>Tracking Number သို့မဟုတ် ဖုန်းနံပါတ်ဖြင့် အချိန်မရွေး ကိုယ်တိုင်ရှာနိုင်သည်။ Messenger တွင် Tracking Link တစ်ခု ပို့ရုံသာ</td></tr>
+<tr><td>ပစ္စည်းစာရင်းကို Messenger/Viber တွင် စာရိုက်ပို့ရသည်</td><td>Online Booking Form — ပို့သူ/လက်ခံသူ၊ လမ်းကြောင်း၊ ပစ္စည်းစာရင်း၊ ခန့်မှန်းကီလို ဖြည့်၍ တစ်ခါတည်းပို့၊ Staff ချက်ချင်းသိ</td></tr>
+<tr><td>ကီလိုဘောက်ချာကို လက်ဖြင့်တွက်ရသည် (ကိုရီးယား ၅ ကီလို / ၁၀ ကီလို Tier စသည်)</td><td>ကီလို ရိုက်ထည့်လိုက်သည်နှင့် Tier ဈေးအလိုက် ဘောက်ချာ အလိုအလျောက်ထွက်၊ Print/ပုံဖြင့် Messenger ပို့နိုင်</td></tr>
+<tr><td>ဈေးနှုန်းကို ဗီဒီယို/ပိုစတာဖြင့်သာ ကြေညာသဖြင့် ပို့စ်များအောက် ပျောက်သွားသည်</td><td>လမ်းကြောင်းအလိုက် ဈေးနှုန်းစာမျက်နှာ + ဈေးတွက်စက် — Admin က ဈေးပြောင်းလျှင် ချက်ချင်း Update</td></tr>
+<tr><td>Website မရှိသဖြင့် Google တွင် ရှာမတွေ့၊ Facebook, TikTok Page တစ်ခုတည်းအပေါ် မှီခိုနေရသည်</td><td>ကိုယ်ပိုင် Domain ဖြင့် Website — Google ရှာဖွေမှုတွင် ပေါ်၊ Page ပြဿနာရှိလျှင်လည်း Customer က Website မှ ဆက်သွယ်နိုင်</td></tr>
+<tr><td>ရုံးလိပ်စာ၊ ဖုန်းနံပါတ်များသည် Cover ပုံထဲတွင်သာ ရှိ</td><td>ရုံးခွဲ ၃ ခု + ထိုင်းဘက် ဆက်သွယ်ရန်ကို Google Map၊ တစ်ချက်နှိပ် ဖုန်းခေါ်၊ Messenger/Viber/TikTok Button များဖြင့် ပြသ</td></tr>
+<tr><td>မှာယူပုံအဆင့်ဆင့်၊ တားမြစ်ပစ္စည်းစည်းကမ်းတို့ကို Featured Post တွင်သာ ရှာရသည်</td><td>"ပစ္စည်းပို့နည်း" နှင့် "တားမြစ်ပစ္စည်း" စာမျက်နှာ</td></tr>
+</table></div>
+</section>
+
+<section id="s3"><h2><span class="n">၃။</span>Demo / Prototype</h2>
+<p>အညာသူအတွက် သီးသန့်ရေးဆွဲထားသော Demo ကို စမ်းသုံးနိုင်ပါသည်။</p>
+<ul>
+<li>Demo Link: <a id="demoLink" href="../?intro">Demo ဖွင့်ရန်</a></li>
+<li>Demo Account များ: Admin / Staff / ပို့ဆောင်သူ (Login စာမျက်နှာတွင် ပြထားသည်)</li>
+</ul>
+<div class="note">Demo တွင် Data ကို စမ်းသပ်ရန် Browser ထဲတွင်သာ သိမ်းထားပါသည်။ အမှန်တကယ် System တွင် Cloud Database ပေါ်တွင် လုံခြုံစွာသိမ်းပြီး ရုံးခွဲအားလုံး Real-time မျှဝေသုံးနိုင်ပါမည်။ Database ကြီးထွားလာမှုကို မူတည်ပြီး ချဲ့ထွင်ရန် လစဉ်ကြေးရှိနိုင်ပါသည်။</div>
+<a class="btn noprint" href="../?intro" style="background:var(--brand);color:#fff">▶ Demo ကို ဖွင့်ရန်</a>
+</section>
+
+<section id="s4"><h2><span class="n">၄။</span>System Feature များ</h2>
+<h3>Customer အတွက် (Public Website — မြန်မာ / English)</h3>
+<ul>
+<li><b>လမ်းကြောင်းနှင့် ဈေးနှုန်း</b> — ထိုင်း (ကားလမ်း၊ မဲဆောက်)၊ ကိုရီးယား (တိုက်ရိုက်လေယာဉ် — အင်္ဂါ/ကြာသပတေး)၊ ဂျပန်၊ ထိုင်ဝမ်၊ တရုတ်၊ ထိုင်း → မြန်မာ။ ကီလို Tier ဈေး၊ ကြာချိန်၊ ထွက်ခွာမည့်ရက်</li>
+<li><b>ဈေးတွက်စက်</b> — လမ်းကြောင်းနှင့် ကီလို ရွေးလိုက်သည်နှင့် ခန့်မှန်းဈေး ပြ</li>
+<li><b>Online Booking</b> — ပစ္စည်းစာရင်း အရင်ပို့ရန် Form (လက်ရှိ လုပ်ငန်းစဉ်အတိုင်း)၊ တားမြစ်ပစ္စည်း အတည်ပြုချက်၊ နယ်မှ Bus Gate ပို့သူများအတွက် Pickup ရွေးချယ်မှု</li>
+<li><b>Tracking</b> — Tracking Number သို့မဟုတ် ဖုန်းနံပါတ်ဖြင့် ရှာ၊ Status Timeline (စာရင်းရပြီး → ထုပ်ပိုးပြီး → ကား/လေယာဉ်တင်ပြီး → နယ်စပ်/ဆိပ်ကမ်းရောက် → ပို့ဆောင်နေ → ရောက်ရှိ)</li>
+<li>ပစ္စည်းပို့နည်း / တားမြစ်ပစ္စည်း / FAQ စာမျက်နှာ</li>
+<li><b>ရုံးခွဲများ</b> — ရန်ကုန် (ရုံးချုပ်)၊ စစ်ကိုင်း၊ အောင်လံ၊ ထိုင်းဘက် ဆက်သွယ်ရန် — Map၊ ဖုန်း၊ Messenger၊ Viber၊ TikTok</li>
+<li>ကုမ္ပဏီ လိုင်စင်အခြေအနေ (Aung Shining Star Co., Ltd) ဖော်ပြချက် — ယုံကြည်မှုအတွက်</li>
+</ul>
+<h3>ဝန်ထမ်းအတွက် (ရုံးခွဲ Staff)</h3>
+<ul>
+<li>Booking လက်ခံ / အတည်ပြု၊ ကီလိုထည့်၍ ဘောက်ချာထုတ် (Tier ဈေး အလိုအလျောက်၊ ကျပ် / ဘတ်)</li>
+<li>ငွေရ/မရ မှတ်တမ်း (Cash, KBZPay, WavePay, AYA Pay, Bank, Baht)</li>
+<li>ထုပ်ပိုးပြီးကြောင်း မှတ်တမ်း၊ QR Label Print</li>
+<li><b>Shipment Batch</b> — ကား/လေယာဉ် တစ်စီးချင်း (ဥပမာ "နိုဝင်ဘာ ၃ ကား") ဖွင့်၊ ပါဆယ်များထည့်၊ QR Scan သို့မဟုတ် တစ်ချက်နှိပ်ဖြင့် Batch တစ်ခုလုံး Status Update</li>
+<li>ရောက်ရှိစာရင်း ထုတ်ယူခြင်း — Facebook တွင် တင်ရန် ပုံချောပုံအဖြစ် (ဖုန်းနံပါတ်များ ဖုံးထားသည်) — လက်ရေးစာရင်း အစားထိုး</li>
+</ul>
+<h3>ထိုင်း/ဆိပ်ကမ်းဘက် ပို့ဆောင်သူအတွက်</h3>
+<ul>
+<li>ဖုန်းမှ Login ဝင်၍ မိမိထံ လွှဲထားသော ပါဆယ်စာရင်း</li>
+<li>လက်ခံသူကို တစ်ချက်နှိပ်ဖုန်းခေါ်၊ Call Log</li>
+<li>ပို့ပြီး / မအောင်မြင် / ပြန်ပို့ မှတ်တမ်း</li>
+</ul>
+<h3>Admin (စီမံခန့်ခွဲသူ) အတွက်</h3>
+<ul>
+<li>လမ်းကြောင်းအလိုက် ဈေးနှုန်း/Tier ပြင်ဆင်ခြင်း (Website ပေါ် ချက်ချင်းပြောင်း)၊ လမ်းကြောင်း ဖွင့်/ပိတ်</li>
+<li>ရုံးခွဲအလိုက် ဝန်ထမ်း Account နှင့် ခွင့်ပြုချက်</li>
+<li>Dashboard — လမ်းကြောင်း/ရုံးခွဲအလိုက် ပါဆယ်အရေအတွက်၊ ကီလို၊ ဝင်ငွေ၊ မရသေးသောငွေ</li>
+<li>Excel ထုတ်ယူခြင်း၊ Audit Log (ဘယ်သူ ဘာပြင်သလဲ)</li>
+</ul>
+</section>
+
+<section id="s5"><h2><span class="n">၅။</span>Project Package များ</h2>
+<div class="tbl"><table>
+<tr><th></th><th class="c">Starter — Website + Tracking</th><th class="c">Business Cargo <span class="star">⭐ အကြံပြု</span></th></tr>
+<tr><td><b>Development Fee (တစ်ကြိမ်)</b></td><td class="c"><b>2,000,000 Ks</b></td><td class="c"><b>3,500,000 Ks</b></td></tr>
+<tr><td>ပြီးစီးချိန်</td><td class="c">1–3 ပတ်</td><td class="c">4–6 ပတ်</td></tr>
+<tr><td>Website (ဈေးနှုန်း၊ ပို့နည်း၊ တားမြစ်ပစ္စည်း၊ ရုံးခွဲ၊ ဆက်သွယ်ရန်)</td><td class="c yes">✓</td><td class="c yes">✓</td></tr>
+<tr><td>မြန်မာ / English</td><td class="c yes">✓</td><td class="c yes">✓</td></tr>
+<tr><td>ဈေးတွက်စက် (လမ်းကြောင်း + Tier)</td><td class="c yes">✓</td><td class="c yes">✓</td></tr>
+<tr><td>Online Booking (ပစ္စည်းစာရင်း အရင်ပို့)</td><td class="c yes">✓</td><td class="c yes">✓</td></tr>
+<tr><td>Tracking (Number / ဖုန်းနံပါတ်)</td><td class="c yes">✓</td><td class="c yes">✓</td></tr>
+<tr><td>Shipment Batch — ကား/လေယာဉ်အလိုက် Status Update</td><td class="c yes">✓</td><td class="c yes">✓</td></tr>
+<tr><td>ရောက်ရှိစာရင်း (Facebook တင်ရန်)</td><td class="c">—</td><td class="c yes">✓</td></tr>
+<tr><td>ကီလိုဘောက်ချာ + ငွေပေးချေမှု မှတ်တမ်း (ကျပ် / ဘတ်)</td><td class="c">—</td><td class="c yes">✓</td></tr>
+<tr><td>QR Label + QR Scan</td><td class="c">—</td><td class="c yes">✓</td></tr>
+<tr><td>ထိုင်း/ဆိပ်ကမ်းဘက် ပို့ဆောင်သူ View</td><td class="c">—</td><td class="c yes">✓</td></tr>
+<tr><td>ရုံးခွဲအလိုက် ဝန်ထမ်း ခွင့်ပြုချက်</td><td class="c">Admin + Staff</td><td class="c">ရုံးခွဲ ၃ ခု + ထိုင်းဘက်</td></tr>
+<tr><td>Dashboard၊ ဝင်ငွေ Report၊ Excel၊ Audit Log</td><td class="c">—</td><td class="c yes">✓</td></tr>
+<tr><td>Training</td><td class="c">1 ကြိမ်</td><td class="c">2 ကြိမ် + User Guide</td></tr>
+<tr><td>အခမဲ့ Bug-fix Support (Launch ပြီး)</td><td class="c">1 လ</td><td class="c">2 လ</td></tr>
+</table></div>
+<div class="note">Starter ဖြင့် စတင်ပြီး နောက်ပိုင်း Business သို့ Upgrade လုပ်ပါက ပေးချေထားပြီးသော 2,000,000 Ks ကို နုတ်ပေးပါမည် (ကျန် 1,500,000 Ks)။</div>
+</section>
+
+<section id="s6"><h2><span class="n">၆။</span>ထပ်ဆောင်း Add-on များ</h2>
+<div class="tbl"><table>
+<tr><th>Add-on</th><th class="r">ဈေးနှုန်း (တစ်ကြိမ်)</th><th>မှတ်ချက်</th></tr>
+<tr><td>Viber / Telegram Notification Bot</td><td class="r">500,000 Ks</td><td></td></tr>
+<tr><td>Facebook Messenger Tracking Bot</td><td class="r">600,000 Ks</td><td>Page ထဲတွင် Tracking Number ရိုက်ရုံဖြင့် အဖြေရ — Page Admin ဝန်ပေါ့</td></tr>
+<tr><td>Scope ပြင်ပ ပြင်ဆင်ချက်များ</td><td class="r">35,000 Ks / နာရီ</td><td>ကြိုတင် ခန့်မှန်းချက်ပေးပြီးမှ လုပ်ဆောင်</td></tr>
+</table></div>
+</section>
+
+<section id="s7"><h2><span class="n">၇။</span>လစဉ်ကုန်ကျစရိတ်များ</h2>
+<h3>(က) Infrastructure (Server, Database, Domain)</h3>
+<div class="tbl"><table>
+<tr><th>ပစ္စည်း</th><th>Provider / Plan</th><th class="r">USD</th><th class="r">ကျပ် (ခန့်မှန်း)</th></tr>
+<tr><td>Website Hosting</td><td>Vercel Pro</td><td class="r">$20 / လ</td><td class="r">~90,000 Ks / လ</td></tr>
+<tr><td>Database + Login + File Storage + နေ့စဉ် Backup</td><td>Supabase Pro</td><td class="r">$25 / လ</td><td class="r">~112,500 Ks / လ</td></tr>
+<tr><td>Domain (ဥပမာ anyarthucargo.com)</td><td>.com</td><td class="r">~$15–30 / နှစ်</td><td class="r">~67,500–135,000 Ks / နှစ်</td></tr>
+<tr><td>SSL (https)</td><td>Hosting တွင် ပါပြီး</td><td class="r">အခမဲ့</td><td class="r">—</td></tr>
+<tr><td>SMS (ယူထားလျှင်)</td><td>Myanmar SMS Gateway</td><td class="r">—</td><td class="r">~12–25 Ks / စောင်</td></tr>
+<tr class="total"><td>စုစုပေါင်း (SMS မပါ)</td><td></td><td class="r">~$46–48 / လ</td><td class="r">≥ ~210,000 Ks / လ</td></tr>
+</table></div>
+<ul>
+<li>ကျပ်ငွေ တွက်ချက်မှုကို 1 USD ≈ 4,500 Ks ဖြင့် ယာယီတွက်ထားပါသည်။</li>
+<li>SMS ဥပမာ — ကားတစ်စီးလျှင် ~၆၀ ဦးစာ၊ တစ်ပတ် ၂ စီး၊ တစ်ဦးလျှင် ၂ စောင်ဆိုလျှင် လစဉ် ~၁,၀၀၀ စောင် ≈ 15,000 Ks / လ</li>
+<li>Account အားလုံးကို ကုမ္ပဏီ၏ Email (anyarthuexpresscargo@gmail.com / Email အသစ်တစ်ခု) ဖြင့် ဖွင့်ပေးမည်ဖြစ်၍ ပိုင်ဆိုင်မှု ကုမ္ပဏီထံတွင်သာ ရှိပါမည်။</li>
+</ul>
+<h3>(ခ) Maintenance ဝန်ဆောင်မှု</h3>
+<div class="tbl"><table>
+<tr><th></th><th class="c">Starter All-in</th><th class="c">Business All-in <span class="star">⭐</span></th></tr>
+<tr><td><b>လစဉ်ကြေး</b></td><td class="c"><b>2500 THB</b></td><td class="c"><b>3000 THB</b></td></tr>
+<tr><td>Bug Fix + Security Update</td><td class="c yes">✓</td><td class="c yes">✓</td></tr>
+<tr><td>Uptime စောင့်ကြည့် + Backup စစ်ဆေး</td><td class="c yes">✓</td><td class="c yes">✓</td></tr>
+<tr><td>ပြင်ဆင်ချက်အသေးစား (ဈေးနှုန်းလမ်းကြောင်း ထပ်ထည့်၊ စာသား)</td><td class="c">2 နာရီ / လ</td><td class="c">5 နာရီ / လ</td></tr>
+<tr><td>ပြဿနာ တုံ့ပြန်ချိန်</td><td class="c">ရုံးဖွင့်ရက် ၂ ရက်အတွင်း</td><td class="c">ရုံးဖွင့်ရက် ၁ ရက်အတွင်း၊ System ရပ်လျှင် ၂၄ နာရီအတွင်း</td></tr>
+<tr><td>လစဉ် Report</td><td class="c">—</td><td class="c yes">✓</td></tr>
+</table></div>
+<h3>All-in Monthly (Infrastructure + Maintenance တစ်ခါတည်း)</h3>
+<p>USD ဖြင့် ပေးချေရခြင်း၊ Provider များကို ကိုယ်တိုင်စီမံရခြင်း မလိုစေရန် လစဉ်တစ်ခါတည်း ပေးချေနိုင်ပါသည်။</p>
+<div class="tbl"><table>
+<tr><th>Plan</th><th>ပါဝင်သည်</th><th class="r">လစဉ်</th></tr>
+<tr><td>Starter All-in</td><td>Infrastructure + Basic Care</td><td class="r">2500 THB</td></tr>
+<tr><td>Business All-in <span class="star">⭐</span></td><td>Infrastructure + Standard Care</td><td class="r">3000 THB</td></tr>
+</table></div>
+</section>
+
+<section id="s8"><h2><span class="n">၈။</span>ပထမနှစ် စုစုပေါင်းကုန်ကျစရိတ် (ခန့်မှန်း)</h2>
+<div class="tbl"><table>
+<tr><th></th><th class="r">Starter</th><th class="r">Business <span class="star">⭐</span></th></tr>
+<tr><td>Development (တစ်ကြိမ်)</td><td class="r">2,000,000 Ks</td><td class="r">3,500,000 Ks</td></tr>
+<tr><td>All-in လစဉ် × 12 လ</td><td class="r">30,000 THB</td><td class="r">36,000 THB</td></tr>
+<tr><td>အခမဲ့ Support လ နုတ် (Maintenance အပိုင်း)</td><td class="r">−2500 THB</td><td class="r">−6000 THB</td></tr>
+</table></div>
+</section>
+
+<section id="s9"><h2><span class="n">၉။</span>လုပ်ငန်းအချိန်ဇယား (Business Cargo — 4–6 ပတ်)</h2>
+<div class="tbl"><table>
+<tr><th>ပတ်</th><th>လုပ်ငန်း</th><th>အညာသူထံမှ လိုအပ်သည်</th></tr>
+<tr><td>1</td><td>Requirement အတည်ပြု၊ လမ်းကြောင်း/ဈေး/ရုံးခွဲ Data စုဆောင်း၊ Design</td><td>ဈေးနှုန်းဇယား (ထိုင်ဝမ်/ဂျပန်/တရုတ်/ပင်လယ်လမ်း အပါအဝင်)၊ အပိုကြေးများ၊ ရုံးလိပ်စာအပြည့်အစုံ</td></tr>
+<tr><td>2–3</td><td>Website + ဈေးတွက်စက် + Booking + Tracking</td><td>Staging Link စမ်းသပ်ရန်</td></tr>
+<tr><td>4–5</td><td>Shipment Batch၊ ဘောက်ချာ၊ QR၊ ထိုင်းဘက် View၊ Dashboard၊ Excel</td><td>ဝန်ထမ်း ၂–၃ ဦး စမ်းသပ်ရန်</td></tr>
+<tr><td>6</td><td>ပြင်ဆင်ချက်များ၊ Training၊ Go-Live၊ Facebook တွင် Website ကြေညာပုံ အကြံပြု</td><td>Page About တွင် Website Link ထည့်ရန်</td></tr>
+</table></div>
+</section>
+
+<section id="s10"><h2><span class="n">၁၀။</span>နည်းပညာနှင့် လုံခြုံရေး</h2>
+<ul>
+<li><b>Website / App:</b> Next.js / React — ဖုန်း၊ Tablet၊ Computer အားလုံးတွင် အဆင်ပြေ</li>
+<li><b>Database:</b> Supabase (PostgreSQL) — နေ့စဉ် Backup</li>
+<li><b>Hosting:</b> Vercel — HTTPS အလိုအလျောက်</li>
+<li><b>လုံခြုံရေး:</b> ဝန်ထမ်းတစ်ဦးချင်း ကိုယ်ပိုင် Login၊ ရုံးခွဲ/ရာထူးအလိုက် ကြည့်ခွင့်ကန့်သတ်၊ Tracking စာမျက်နှာနှင့် ရောက်ရှိစာရင်းတွင် Customer ဖုန်းနံပါတ်ကို ဖုံးထား၊ Audit Log</li>
+<li><b>ပိုင်ဆိုင်မှု:</b> ငွေအပြည့်ပေးချေပြီးနောက် Source Code နှင့် Account အားလုံး ကုမ္ပဏီသို့ လွှဲပေးပါမည်</li>
+</ul>
+</section>
+
+<section id="s11"><h2><span class="n">၁၁။</span>ကျွန်ုပ်တို့ လုပ်ဆောင်ခဲ့သော Project များ</h2>
+<div class="tbl"><table>
+<tr><th>Project</th><th>အကြောင်းအရာ</th><th>ဤ Project နှင့် ဆက်စပ်သော အတွေ့အကြုံ</th></tr>
+<tr><td><b>IGAI</b><br><a href="https://igaimm.com" target="_blank" rel="noopener">igaimm.com ↗</a></td><td>IGCSE ကျောင်းသားများအတွက် AI Study Platform (မြန်မာ/English)</td><td>User Account၊ Dashboard၊ KBZPay / WavePay ငွေပေးချေမှု၊ လက်ရှိ အသုံးပြုနေ</td></tr>
+<tr><td><b>X-Panda Study Buddy</b><br><a href="https://x-panda-study-buddy.vercel.app/" target="_blank" rel="noopener">x-panda-study-buddy.vercel.app ↗</a></td><td>Team Communication / Collaboration Web</td><td>Booking၊ Scheduling၊ အဖွဲ့လိုက် အလုပ်ခွဲဝေမှု</td></tr>
+<tr><td><b>ThuKha Platform</b><br><a href="https://thukha-platform-tagc.vercel.app/" target="_blank" rel="noopener">thukha-platform-tagc.vercel.app ↗</a></td><td>SME များအတွက် AI Marketing Workspace</td><td>မြန်မာ SME များအတွက် Business Tool၊ Facebook အတွက် Content</td></tr>
+<tr><td><b>အညာသူ Demo</b><br><a href="https://anyarthu-demo.vercel.app/" target="_blank" rel="noopener">anyarthu-demo.vercel.app ↗</a></td><td>Cargo Tracking Prototype</td><td>အညာသူ၏ လုပ်ငန်းစဉ်အတိုင်း ကြိုတင်တည်ဆောက်ထားပြီး</td></tr>
+</table></div>
+</section>
+
+<section id="s12"><h2><span class="n">၁၂။</span>QUOTATION — Business Cargo Package</h2>
+<p><b>Quotation No.:</b> Q-AT-2026-007 · <b>Date:</b> 10 November 2026 · <b>Valid until:</b> 1 December 2026<br>
+<b>To:</b> <a href="https://web.facebook.com/profile.php?id=100094118717190" target="_blank" rel="noopener">အညာသူ Express Cargo Service</a> (Aung Shining Star Co., Ltd) · <a href="https://web.facebook.com/profile.php?id=100094118717190" target="_blank" rel="noopener">Facebook Page ↗</a><br>
+<b>From:</b> Team Thukha, <a href="mailto:thukhamyanmar26@gmail.com">thukhamyanmar26@gmail.com</a></p>
+<div class="tbl"><table>
+<tr><th>No.</th><th>Description</th><th class="r">Amount (Ks)</th></tr>
+<tr><td>1</td><td>Requirement Analysis &amp; UI/UX Design (မြန်မာ/English)</td><td class="r">400,000</td></tr>
+<tr><td>2</td><td>Public Website — လမ်းကြောင်းနှင့် ဈေးနှုန်း၊ ပို့နည်း၊ တားမြစ်ပစ္စည်း၊ FAQ၊ ရုံးခွဲများ၊ ဆက်သွယ်ရန်</td><td class="r">600,000</td></tr>
+<tr><td>3</td><td>Online Booking + ဈေးတွက်စက် + Tracking (Number / ဖုန်းနံပါတ်)</td><td class="r">600,000</td></tr>
+<tr><td>4</td><td>Shipment Batch (ကား/လေယာဉ်) — Status Update၊ ရောက်ရှိစာရင်း ထုတ်ယူခြင်း</td><td class="r">700,000</td></tr>
+<tr><td>5</td><td>ကီလိုဘောက်ချာ (Tier ဈေး၊ ကျပ်/ဘတ်)၊ ငွေပေးချေမှု၊ QR Label/Scan၊ ထိုင်းဘက် ပို့ဆောင်သူ View</td><td class="r">600,000</td></tr>
+<tr><td>6</td><td>Admin — ရုံးခွဲ/ဝန်ထမ်းခွင့်ပြုချက်၊ Dashboard၊ Excel၊ Audit Log</td><td class="r">500,000</td></tr>
+<tr><td>7</td><td>Database၊ Hosting၊ Domain Setup၊ Deployment</td><td class="r">300,000</td></tr>
+<tr><td>8</td><td>Testing၊ Staff Training ×2၊ User Guide</td><td class="r">200,000</td></tr>
+<tr><td></td><td>Subtotal</td><td class="r">3,900,000</td></tr>
+<tr><td></td><td>Package Discount</td><td class="r">(400,000)</td></tr>
+<tr class="total"><td></td><td>Total Development Fee</td><td class="r">3,500,000 Ks</td></tr>
+</table></div>
+<div class="note">လစဉ် (Launch ပြီးနောက်): Business All-in 3000 THB / Month — ပထမ ၂ လတွင် Maintenance အခမဲ့ဖြစ်၍ Infrastructure ခ သာ ပေးရပါမည်။</div>
+<h3>ငွေပေးချေမှု အဆင့်များ</h3>
+<div class="tbl"><table>
+<tr><th>အဆင့်</th><th>အချိန်</th><th class="c">%</th><th class="r">ပမာဏ</th></tr>
+<tr><td>1</td><td>စာချုပ်ချုပ်ဆိုချိန်</td><td class="c">40%</td><td class="r">1,400,000 Ks</td></tr>
+<tr><td>2</td><td>Staging System ပြသချိန်</td><td class="c">30%</td><td class="r">1,050,000 Ks</td></tr>
+<tr><td>3</td><td>Go-Live ချိန်</td><td class="c">30%</td><td class="r">1,050,000 Ks</td></tr>
+</table></div>
+<p>ငွေပေးချေနိုင်သောနည်းလမ်း — Bank Transfer / KBZPay / WavePay / AYA Pay</p>
+</section>
+
+<section id="s13"><h2><span class="n">၁၃။</span>စည်းကမ်းချက်များ</h2>
+<ul>
+<li>ဤ Quotation သည် ထုတ်ပေးသည့်နေ့မှ ရက် ၂၀ အထိ အကျုံးဝင်ပါသည်။</li>
+<li>Scope အပြင်ဘက် တောင်းဆိုချက်များကို သီးခြား ခန့်မှန်းဈေးပေးပြီး သဘောတူမှသာ လုပ်ဆောင်ပါမည်။</li>
+<li>Design နှင့် Staging အဆင့်တိုင်းတွင် ပြင်ဆင်ခွင့် ၂ ကြိမ်စီ ပါဝင်ပါသည်။</li>
+<li>အညာသူမှ ပေးရမည့်အရာများ — Logo၊ လမ်းကြောင်းအားလုံး၏ ဈေးနှုန်းနှင့် အပိုကြေး၊ ရုံးလိပ်စာအပြည့်အစုံ၊ ရုံးဖွင့်ချိန်၊ ပျက်စီး/ပျောက်ဆုံးမူဝါဒ၊ ဆက်သွယ်ရန် တာဝန်ခံ တစ်ဦး။ နောက်ကျပါက Timeline လိုက်ရွှေ့ပါမည်။</li>
+<li>Infrastructure ခများသည် Provider ဈေးနှုန်းနှင့် ငွေလဲနှုန်းအပေါ် မူတည်၍ ပြောင်းလဲနိုင်ပါသည်။ ပြောင်းလဲပါက ၁ လ ကြိုတင်အသိပေးပါမည်။</li>
+<li>Source Code နှင့် Account အားလုံး ငွေအပြည့်ပေးချေပြီးနောက် ကုမ္ပဏီ ပိုင်ဆိုင်ပါသည်။</li>
+<li>Maintenance ကို ၁ လ ကြိုတင်အကြောင်းကြား၍ ရပ်ဆိုင်းနိုင်ပါသည်။</li>
+<li>Customer Data များကို တတိယပုဂ္ဂိုလ်ထံ မျှဝေခြင်း မပြုပါ။</li>
+</ul>
+</section>
+
+<section id="s14"><h2><span class="n">၁၄။</span>နောက်တစ်ဆင့်</h2>
+<ol>
+<li>Demo ကို စမ်းသုံးပြီး ပြင်ဆင်လိုသည်များ ပြောပြပါ</li>
+<li>Starter သို့မဟုတ် Business Plan ရွေးချယ်ပါ</li>
+<li>Requirement အတည်ပြု Meeting (၁ နာရီ) ချိန်းဆိုပါ</li>
+<li>စာချုပ်ချုပ်ဆို၍ ပထမအရစ် ပေးချေပြီးနောက် 4–6 ပတ်အတွင်း Go-Live</li>
+</ol>
+<div class="pick">ဆက်သွယ်ရန်: Team Thukha · Project Manager — U Aung Myo Hlaing · <a href="tel:+66828820739">+66 82 882 0739</a> · <a href="mailto:thukhamyanmar26@gmail.com">thukhamyanmar26@gmail.com</a></div>
+<h3>အညာသူ အတည်ပြုချက်</h3>
+<div class="sign"><div>လက်မှတ်</div><div>အမည်</div><div>ရက်စွဲ</div></div>
+</section>
+
+</main>
+<footer>© 2026 Team Thukha · Prepared for <a href="https://web.facebook.com/profile.php?id=100094118717190" target="_blank" rel="noopener">အညာသူ Express Cargo Service</a></footer>
+<script>
+  // Show the real demo URL (works on any Vercel domain)
+  var a = document.getElementById('demoLink'); a.textContent = location.origin + '/';
+</script>
+</body>
+</html>

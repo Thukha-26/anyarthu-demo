@@ -1,0 +1,86 @@
+/* ================= public nav: active state + compact phone layout ================= */
+.links a[aria-current=page]{background:var(--gold-bg);color:var(--gold-fg)}
+html[data-theme=dark] .links a[aria-current=page]{color:var(--gold)}
+
+@media (max-width:760px){
+  /* a blurred header would trap the fixed bottom bar inside it, so use a solid background here */
+  .pub{backdrop-filter:none;-webkit-backdrop-filter:none;background:var(--surface)}
+  /* one slim header row: logo + name on the left, language/theme on the right */
+  .pub .wrap{flex-wrap:nowrap;gap:8px;padding-top:6px;padding-bottom:6px}
+  .pub .brand{gap:8px;flex:1 1 auto}
+  .pub .brand img{width:38px;height:38px}
+  .pub .brand b{font-size:12.5px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .pub .brand small{display:none}
+  .pub .brand span{min-width:0}
+  .pub .tools{flex-wrap:nowrap;gap:6px;flex:none}
+  .pub .lang{grid-template-columns:repeat(2,48px);padding:3px}
+  .pub .lang i{width:48px;top:3px;bottom:3px;left:3px;transform:translateX(calc(var(--i)*48px))}
+  .pub .lang button{min-height:32px;font-size:12px}
+  .pub .theme{width:38px;height:38px;padding:0;justify-content:center;flex:none}
+  .pub .theme>svg{display:none}
+  .pub .theme i{position:static;width:32px;height:32px;transform:none}
+  html[data-theme=dark] .pub .theme i{transform:rotate(360deg)}
+  .pub .lang{grid-template-columns:repeat(2,44px)}
+  .pub .lang i{width:44px;transform:translateX(calc(var(--i)*44px))}
+
+  /* menu becomes an app-style bar at the bottom of the screen */
+  .pub .links{position:fixed;left:0;right:0;bottom:0;z-index:40;display:grid;grid-template-columns:repeat(4,1fr);gap:0;
+    padding:6px 8px calc(6px + env(safe-area-inset-bottom));background:color-mix(in srgb,var(--surface) 94%,transparent);
+    backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line);box-shadow:0 -8px 24px rgba(27,39,104,.1)}
+  .pub .links a{flex-direction:column;gap:2px;min-height:52px;padding:4px 2px;justify-content:center;border-radius:12px;font-size:11.5px;font-weight:600;line-height:1.3;text-align:center}
+  .pub .links a span{display:block!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+  .pub .links a svg{width:21px;height:21px}
+  .pub .links a[aria-current=page] svg{transform:translateY(-1px)}
+
+  /* keep page content and floating buttons clear of the bottom bar */
+  body:has(.pub){padding-bottom:calc(68px + env(safe-area-inset-bottom))}
+  body:has(.pub) .propbtn{bottom:calc(78px + env(safe-area-inset-bottom))!important}
+}
+@media print{.pub .links{display:none}}
+
+/* ---- QR scan button + scanner ---- */
+.qrbtn{flex:none;width:48px;min-height:48px;border:0;border-radius:13px;background:var(--blue-bg);color:var(--brand);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .2s,background .2s,box-shadow .2s}
+.qrbtn:hover{transform:translateY(-2px);background:var(--gold-bg);color:var(--gold-fg);box-shadow:0 6px 14px rgba(27,39,104,.18)}
+.qrbtn:active{transform:translateY(1px)}
+.trackbar .qrbtn{background:#EEF1FC;color:#27378F}
+.qrbtn.line{background:transparent;border:1.5px solid var(--field);min-height:46px;width:46px}
+html[data-theme=dark] .qrbtn{color:var(--link)}
+.qrscan h2{display:flex;align-items:center;gap:8px}
+.qrview{position:relative;width:100%;max-width:420px;margin:0 auto;aspect-ratio:1;border-radius:20px;overflow:hidden;background:#0B0F28}
+.qrview #qr-reader{width:100%;height:100%}
+.qrview #qr-reader video{width:100%!important;height:100%!important;object-fit:cover}
+.qrview #qr-reader img{display:none}
+.qrframe{position:absolute;inset:14%;border-radius:18px;pointer-events:none;box-shadow:0 0 0 999px rgba(11,15,40,.35);
+  background:linear-gradient(var(--gold),var(--gold)) 0 0/34px 4px no-repeat,linear-gradient(var(--gold),var(--gold)) 0 0/4px 34px no-repeat,
+  linear-gradient(var(--gold),var(--gold)) 100% 0/34px 4px no-repeat,linear-gradient(var(--gold),var(--gold)) 100% 0/4px 34px no-repeat,
+  linear-gradient(var(--gold),var(--gold)) 0 100%/34px 4px no-repeat,linear-gradient(var(--gold),var(--gold)) 0 100%/4px 34px no-repeat,
+  linear-gradient(var(--gold),var(--gold)) 100% 100%/34px 4px no-repeat,linear-gradient(var(--gold),var(--gold)) 100% 100%/4px 34px no-repeat}
+.qrframe i{position:absolute;left:6%;right:6%;height:2px;top:10%;background:linear-gradient(90deg,transparent,#F6DE95,transparent);box-shadow:0 0 12px #E7C468;animation:qrline 2.2s ease-in-out infinite}
+.qrview.nocam .qrframe i{display:none}
+@keyframes qrline{0%,100%{top:10%}50%{top:88%}}
+@media (prefers-reduced-motion:reduce){.qrframe i{animation:none}}
+
+@media (max-width:480px){
+  .trackbar .btn,form[data-form=track] .row>.btn{font-size:0;gap:0;padding:0 14px;min-width:48px}
+  .trackbar .btn svg,form[data-form=track] .row>.btn svg{width:20px;height:20px}
+  .trackbar{gap:6px}
+  form[data-form=track] .row{gap:8px}
+  form[data-form=track] .inp{min-width:0;flex:1}
+}
+
+/* ---- PWA install notification ---- */
+.pwa-card{position:fixed;z-index:70;left:50%;bottom:20px;width:min(420px,calc(100% - 24px));transform:translate(-50%,140%);opacity:0;
+  background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:20px;padding:16px 16px 14px;
+  box-shadow:0 24px 60px rgba(10,14,50,.35),0 2px 0 rgba(255,255,255,.6) inset;transition:transform .55s cubic-bezier(.2,1.2,.4,1),opacity .4s}
+.pwa-card.show{transform:translate(-50%,0);opacity:1}
+.pwa-card::before{content:"";position:absolute;left:18px;right:18px;top:0;height:3px;border-radius:0 0 3px 3px;background:linear-gradient(90deg,var(--gold-deep),var(--gold))}
+.pwa-row{display:flex;gap:12px;align-items:flex-start;padding-right:22px}
+.pwa-row img{flex:none;border-radius:14px;box-shadow:0 6px 16px rgba(27,39,104,.25);animation:pwabob 2.4s ease-in-out infinite}
+.pwa-row b{display:block;font-size:15.5px;line-height:1.5}
+.pwa-row p{margin:2px 0 0;font-size:13.5px;color:var(--muted);line-height:1.6}
+.pwa-btns{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+.pwa-x{position:absolute;top:8px;right:10px;width:32px;height:32px;border:0;border-radius:50%;background:transparent;color:var(--muted);font-size:22px;line-height:1;cursor:pointer}
+.pwa-x:hover{background:var(--soft)}
+@keyframes pwabob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@media (max-width:760px){body:has(.pub) .pwa-card{bottom:calc(78px + env(safe-area-inset-bottom))}}
+@media (prefers-reduced-motion:reduce){.pwa-card{transition:opacity .2s}.pwa-row img{animation:none}}

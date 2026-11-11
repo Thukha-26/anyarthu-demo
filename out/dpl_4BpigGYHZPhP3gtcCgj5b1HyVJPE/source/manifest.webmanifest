@@ -1,0 +1,24 @@
+{
+  "name": "အညာသူ Express Cargo Service",
+  "short_name": "အညာသူ Cargo",
+  "description": "ထိုင်း၊ ကိုရီးယား နှင့် နိုင်ငံပေါင်း (၁၂) ကျော်ကို Door to Door — ပစ္စည်းစာရင်းပို့ရန်၊ ဈေးတွက်ရန်၊ ပါဆယ် Tracking ကြည့်ရန်",
+  "id": "/",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#141D55",
+  "theme_color": "#1B2768",
+  "lang": "my",
+  "categories": ["business", "shopping", "utilities"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "ပါဆယ်ရှာရန်", "short_name": "Tracking", "url": "/#/track", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "ပစ္စည်းစာရင်း ပို့ရန်", "short_name": "စာရင်းပို့", "url": "/#/", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

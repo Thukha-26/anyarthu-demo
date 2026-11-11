@@ -1,0 +1,32 @@
+/* ================= staff / admin: slide-in drawer on phones ================= */
+@media (max-width:860px){
+  /* the sidebar leaves the bottom strip and becomes a full-height drawer */
+  .side,.shell.closed .side{position:fixed;top:0;bottom:0;left:0;right:auto;width:min(300px,84vw);height:100vh;height:100dvh;z-index:60;
+    flex-direction:column;gap:10px;padding:16px 12px calc(14px + env(safe-area-inset-bottom));border-radius:0 26px 26px 0;overflow-y:auto;
+    margin-left:0;transform:translateX(-105%);visibility:hidden;
+    transition:transform .38s cubic-bezier(.2,.8,.2,1),visibility .38s;box-shadow:24px 0 60px rgba(10,14,50,.35)}
+  .shell.mopen .side{transform:none;visibility:visible}
+  .side .brand,.userbox{display:flex}
+  .side .brand{padding:4px 6px 12px;border-bottom:1px solid rgba(255,255,255,.1)}
+  .sidenav{flex-direction:column;overflow-x:visible;gap:3px;flex:1}
+  .sidenav a{flex:none;flex-direction:row;gap:12px;font-size:15px;padding:0 14px;min-height:48px;justify-content:flex-start}
+  .badge-n{position:static;margin-left:auto;min-width:22px;font-size:11px;padding:0 6px}
+  /* items slide in one after another when the drawer opens */
+  .shell.mopen .sidenav a{animation:drawin .42s cubic-bezier(.2,.8,.2,1) both}
+  .shell.mopen .sidenav a:nth-child(2){animation-delay:.03s}.shell.mopen .sidenav a:nth-child(3){animation-delay:.06s}
+  .shell.mopen .sidenav a:nth-child(4){animation-delay:.09s}.shell.mopen .sidenav a:nth-child(5){animation-delay:.12s}
+  .shell.mopen .sidenav a:nth-child(6){animation-delay:.15s}.shell.mopen .sidenav a:nth-child(7){animation-delay:.18s}
+  .shell.mopen .sidenav a:nth-child(8){animation-delay:.21s}.shell.mopen .sidenav a:nth-child(n+9){animation-delay:.24s}
+  @keyframes drawin{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:none}}
+  /* dimmed backdrop — tapping it closes the drawer */
+  .shell::after{content:"";position:fixed;inset:0;z-index:55;background:rgba(10,14,50,.5);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);opacity:0;pointer-events:none;transition:opacity .3s}
+  .shell.mopen::after{opacity:1;pointer-events:auto}
+  html.drawer-lock,html.drawer-lock body{overflow:hidden}
+  /* nothing at the bottom any more, so pages can use the full height */
+  .page{padding:14px 14px 28px}
+  .bulk{bottom:16px}
+  #toast{bottom:20px}
+  .bar .burger{display:inline-block}
+  .mobile-out{display:none!important}
+}
+@media (max-width:860px) and (prefers-reduced-motion:reduce){.side{transition:none}.shell.mopen .sidenav a{animation:none}}
