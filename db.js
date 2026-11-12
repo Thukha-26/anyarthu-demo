@@ -1,19 +1,29 @@
-const { Pool } = require('pg');
+﻿const { Pool } = require('pg');
 require('dotenv').config();
 
 // SSL Certificate Chain စစ်ဆေးမှုကို ကျော်လွှားရန်
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
-let connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL || '';
-// URL ထဲရှိ sslmode ကြောင့် pg က rejectUnauthorized ပြန်ဖွင့်သွားခြင်းကို တားဆီးရန်
-connectionString = connectionString.replace(/[?&]sslmode=[^&]+/g, '');
+const rawUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL || '';
+let poolConfig = {
+  ssl: { rejectUnauthorized: false }
+};
 
-const pool = new Pool({
-  connectionString: connectionString,
-  ssl: {
-    rejectUnauthorized: false
+if (rawUrl) {
+  try {
+    const dbUrl = new URL(rawUrl);
+    poolConfig.user = decodeURIComponent(dbUrl.username);
+    poolConfig.password = decodeURIComponent(dbUrl.password);
+    poolConfig.host = dbUrl.hostname;
+    poolConfig.port = dbUrl.port ? parseInt(dbUrl.port, 10) : 5432;
+    // Database name ကို သန့်ရှင်းစွာ ယူခြင်း (postgres)
+    poolConfig.database = dbUrl.pathname.replace(/^\//, '') || 'postgres';
+  } catch (e) {
+    poolConfig.connectionString = rawUrl;
   }
-});
+}
+
+const pool = new Pool(poolConfig);
 
 const query = (text, params) => pool.query(text, params);
 

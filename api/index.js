@@ -1,8 +1,7 @@
-const express = require('express');
+﻿const express = require('express');
 const axios = require('axios');
 const path = require('path');
 
-// Root folder ရှိ db.js အား ချိတ်ဆက်ခြင်း
 let db;
 try {
   db = require('../db');
@@ -17,14 +16,11 @@ try {
 const app = express();
 app.use(express.json());
 
-// Environment Variables
 const FB_PAGE_ACCESS_TOKEN = process.env.FB_PAGE_ACCESS_TOKEN;
 const FB_VERIFY_TOKEN = process.env.FB_VERIFY_TOKEN || 'anyarthu_free_token_2026';
 const VIBER_AUTH_TOKEN = process.env.VIBER_AUTH_TOKEN;
 
-// ------------------------------------------------------------------
-// 1. Messenger Webhook Verification (GET)
-// ------------------------------------------------------------------
+// 1. Messenger Verification (GET)
 app.get('/webhook/messenger', (req, res) => {
   const mode = req.query['hub.mode'];
   const token = req.query['hub.verify_token'];
@@ -41,24 +37,17 @@ app.get('/webhook/messenger', (req, res) => {
   res.sendStatus(400);
 });
 
-// ------------------------------------------------------------------
-// 2. Messenger Webhook Handler (POST)
-// ------------------------------------------------------------------
+// 2. Messenger Message Handler (POST)
 app.post('/webhook/messenger', async (req, res) => {
   try {
     const body = req.body;
-
     if (body && body.object === 'page' && Array.isArray(body.entry)) {
       for (const entry of body.entry) {
-        if (!entry || !Array.isArray(entry.messaging)) {
-          continue;
-        }
-
+        if (!entry || !Array.isArray(entry.messaging)) continue;
         for (const webhookEvent of entry.messaging) {
           if (webhookEvent && webhookEvent.message && webhookEvent.message.text) {
             const senderId = webhookEvent.sender?.id;
             const userText = webhookEvent.message.text.trim();
-
             if (senderId && userText) {
               await handleFacebookMessage(senderId, userText);
             }
@@ -69,24 +58,19 @@ app.post('/webhook/messenger', async (req, res) => {
   } catch (err) {
     console.error('Messenger Webhook Error:', err);
   }
-
   return res.status(200).send('EVENT_RECEIVED');
 });
 
-// ------------------------------------------------------------------
 // 3. Viber Webhook Handler (POST)
-// ------------------------------------------------------------------
 app.post('/webhook/viber', async (req, res) => {
   try {
     const body = req.body;
     if (body && body.event === 'webhook') {
       return res.status(200).send('OK');
     }
-
     if (body && body.event === 'message' && body.message && body.message.text) {
       const senderId = body.sender?.id;
       const userText = body.message.text.trim();
-
       if (senderId && userText) {
         await handleViberMessage(senderId, userText);
       }
@@ -94,28 +78,26 @@ app.post('/webhook/viber', async (req, res) => {
   } catch (err) {
     console.error('Viber Webhook Error:', err);
   }
-
   return res.status(200).send('OK');
 });
 
-// ------------------------------------------------------------------
-// 4. Message Processing & Database Tracking Logic
-// ------------------------------------------------------------------
+// 4. Tracking Logic
 async function findParcelByTracking(trackingNumber) {
   if (!db) return null;
   try {
+    if (typeof db.getParcelTracking === 'function') {
+      return await db.getParcelTracking(trackingNumber);
+    }
     const cleanNo = trackingNumber.trim().toUpperCase();
-    console.log("Searching for tracking number:", cleanNo);
-    
-    // Hubs table နှင့် JOIN မလုပ်ဘဲ parcels ဇယားမှ တိုက်ရိုက်ဆွဲထုတ်ခြင်း
     const queryText = `
-      SELECT tracking_number, recipient_name, status, destination_hub, current_hub_id
-      FROM parcels
-      WHERE UPPER(TRIM(tracking_number)) = $1
+      SELECT p.tracking_number, p.recipient_name, p.status, p.destination_hub,
+             h.name as current_hub_name
+      FROM parcels p
+      LEFT JOIN hubs h ON p.current_hub_id = h.id
+      WHERE UPPER(TRIM(p.tracking_number)) = $1
       LIMIT 1;
     `;
     const res = await db.query(queryText, [cleanNo]);
-    console.log("Database result:", res.rows);
     return res.rows?.[0] || null;
   } catch (err) {
     console.error('Database Query Error:', err.message);
@@ -127,7 +109,6 @@ function formatTrackingReply(parcel, rawInput) {
   if (!parcel) {
     return `❌ နံပါတ် "${rawInput}" အား စနစ်ထဲတွင် ရှာမတွေ့ပါ။ Tracking Number ကို ပြန်လည်စစ်ဆေးပေးပါရှင်။`;
   }
-
   const trackingNo = parcel.tracking_number || rawInput;
   const receiver = parcel.recipient_name || 'စမ်းသပ်သူ';
   const status = parcel.status || 'သတ်မှတ်ဆဲ';
@@ -165,9 +146,6 @@ async function handleViberMessage(senderId, text) {
   await sendViberMessage(senderId, replyText);
 }
 
-// ------------------------------------------------------------------
-// 5. Sending APIs
-// ------------------------------------------------------------------
 async function sendFacebookMessage(recipientId, text) {
   if (!FB_PAGE_ACCESS_TOKEN) return;
   try {
@@ -199,6 +177,7 @@ async function sendViberMessage(receiverId, text) {
         headers: { 'X-Viber-Auth-Token': VIBER_AUTH_TOKEN }
       }
     );
+    console.log(`Viber message sent to ${receiverId}`);
   } catch (err) {
     console.error('Viber Send Error:', err.response?.data || err.message);
   }
