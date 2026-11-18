@@ -117,8 +117,9 @@ app.get('/webhook/track', async (req, res) => {
 // Website မှ Pickup / Parcel အသစ်တင်တိုင်း Supabase Database ထဲသို့ တိုက်ရိုက်သွင်းပေးသည့် API
 app.post('/webhook/pickup-sync', async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  if (!db || !db.pool) {
-    return res.status(500).json({ success: false, message: 'Database connection not ready' });
+  const queryFn = (db && db.query) ? db.query : (db && db.pool ? db.pool.query.bind(db.pool) : null);
+  if (!queryFn) {
+    return res.status(500).json({ success: false, message: 'Database query function not available' });
   }
   try {
     const d = req.body || {};
@@ -131,19 +132,20 @@ app.post('/webhook/pickup-sync', async (req, res) => {
     const receiverPhone = d.receiverPhone || '-';
     const destHub = d.destName || d.destId || 'BKK';
     const originHub = (d.originId || 'YGN').toUpperCase();
+    const validHub = ['YGN', 'MDY', 'TGI'].includes(originHub) ? originHub : 'YGN';
     const qty = parseInt(d.qty, 10) || 1;
-    const statusText = d.statusText || 'စာရင်းသွင်း လက်ခံပြီး (Pickup တောင်းဆိုဆဲ)';
+    const statusText = d.statusText || 'စာရင်းသွင်းပြီး (Pickup စောင့်ဆိုင်းဆဲ)';
 
     // 1. pickup_requests ဇယားထဲသို့ ထည့်သွင်းခြင်း
-    await db.pool.query(
+    await queryFn(
       `INSERT INTO pickup_requests (sender_name, sender_phone, address, township, hub_id, item_qty, status, created_at)
        VALUES ($1, $2, $3, $4, $5, $6, 'PENDING', NOW())`,
-      [senderName, senderPhone, pickupAddr, township, ['YGN','MDY','TGI'].includes(originHub) ? originHub : 'YGN', qty]
+      [senderName, senderPhone, pickupAddr, township, validHub, qty]
     );
 
-    // 2. parcels ဇယားထဲသို့ ထည့်သွင်းခြင်း (Messenger Bot နှင့် Tracking စာမျက်နှာတွင် ချက်ချင်းရှာတွေ့စေရန်)
+    // 2. parcels ဇယားထဲသို့ ထည့်သွင်းခြင်း
     if (trackingNo) {
-      await db.pool.query(
+      await queryFn(
         `INSERT INTO parcels (tracking_number, recipient_name, recipient_phone, destination_hub, current_hub_id, status, updated_at)
          VALUES ($1, $2, $3, $4, $5, $6, NOW())
          ON CONFLICT (tracking_number) DO UPDATE SET
@@ -151,10 +153,11 @@ app.post('/webhook/pickup-sync', async (req, res) => {
            destination_hub = EXCLUDED.destination_hub,
            status = EXCLUDED.status,
            updated_at = NOW()`,
-        [trackingNo, receiverName, receiverPhone, destHub, ['YGN','MDY','TGI'].includes(originHub) ? originHub : 'YGN', statusText]
+        [trackingNo, receiverName, receiverPhone, destHub, validHub, statusText]
       );
     }
 
+    console.log('Synced to Supabase:', trackingNo);
     return res.status(200).json({ success: true, trackingNo });
   } catch (err) {
     console.error('Pickup Sync Error:', err.message);
@@ -378,3 +381,4 @@ async function sendViberMessage(receiverId, text) {
 app.use(express.static(path.join(__dirname, '../')));
 
 module.exports = app;
+

@@ -238,3 +238,29 @@ document.addEventListener('input', e => { if ('filter' in e.target.dataset) { co
     }
   }
 })();
+
+// ====== SUPABASE LIVE SYNC (SUBMIT EVENT LISTENER) ======
+document.addEventListener('submit', function(e) {
+  const form = e.target;
+  if (!form || !form.dataset) return;
+  const formType = form.dataset.form;
+  if (formType === 'pickup' || formType === 'newParcel') {
+    setTimeout(() => {
+      if (typeof db !== 'undefined' && Array.isArray(db.parcels) && db.parcels[0]) {
+        const latest = db.parcels[0];
+        fetch('/webhook/pickup-sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...latest,
+            destName: typeof bName === 'function' ? bName(latest.destId) : latest.destId,
+            statusText: formType === 'pickup' ? 'စာရင်းသွင်းပြီး (Pickup စောင့်ဆိုင်းဆဲ)' : 'ရုံးခွဲတွင် ပါဆယ်လက်ခံရရှိပြီး'
+          })
+        })
+        .then(r => r.json())
+        .then(res => console.log('Supabase Live Sync:', res))
+        .catch(err => console.error('Supabase Live Sync Error:', err));
+      }
+    }, 150);
+  }
+});
