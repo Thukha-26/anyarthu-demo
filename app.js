@@ -264,3 +264,5 @@ document.addEventListener('submit', function(e) {
     }, 150);
   }
 });
+
+document.addEventListener('submit', e => { if (e.target?.dataset?.form === 'pickup') { localStorage.removeItem('anyarthu-user'); } }, true);
