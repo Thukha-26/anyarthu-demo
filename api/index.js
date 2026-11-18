@@ -148,12 +148,20 @@ app.post('/webhook/pickup-sync', async (req, res) => {
       [originHub, originName, originName]
     );
 
-    // 1. pickup_requests ဇယားထဲသို့ ထည့်သွင်းခြင်း
-    await queryFn(
-      `INSERT INTO pickup_requests (sender_name, sender_phone, address, township, hub_id, item_qty, status, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6, 'PENDING', NOW())`,
-      [senderName, senderPhone, pickupAddr, township, originHub, qty]
+    // 1. pickup_requests ဇယားထဲသို့ နှစ်ထပ်မဝင်အောင် စစ်ဆေးပြီးမှ ထည့်သွင်းခြင်း
+    const dupCheck = await queryFn(
+      `SELECT id FROM pickup_requests
+       WHERE sender_phone = $1 AND address = $2 AND created_at > NOW() - INTERVAL '30 seconds'
+       LIMIT 1`,
+      [senderPhone, pickupAddr]
     );
+    if (!dupCheck.rows || dupCheck.rows.length === 0) {
+      await queryFn(
+        `INSERT INTO pickup_requests (sender_name, sender_phone, address, township, hub_id, item_qty, status, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, 'PENDING', NOW())`,
+        [senderName, senderPhone, pickupAddr, township, originHub, qty]
+      );
+    }
 
     // 2. parcels ဇယားထဲသို့ ကော်လံအသစ်များအပါအဝင် ထည့်သွင်းခြင်း
     if (trackingNo) {
@@ -420,6 +428,7 @@ async function sendViberMessage(receiverId, text) {
 app.use(express.static(path.join(__dirname, '../')));
 
 module.exports = app;
+
 
 
 
