@@ -266,3 +266,30 @@ document.addEventListener('submit', function(e) {
 });
 
 document.addEventListener('submit', e => { if (e.target?.dataset?.form === 'pickup') { localStorage.removeItem('anyarthu-user'); } }, true);
+
+// ====== SUPABASE LIVE STATUS SYNC (STAFF / DELIVERY / ADMIN) ======
+(function hookMoveToSupabase() {
+  const prevOnMove = window.onMove;
+  window.onMove = function(p, s) {
+    if (typeof prevOnMove === 'function') prevOnMove(p, s);
+    if (!p || !p.no) return;
+
+    const statusLabel = (typeof t === 'function') ? t('s_' + s) : s;
+    const branchLabel = (typeof bName === 'function' && p.branchId) ? bName(p.branchId) : '';
+
+    fetch('/webhook/status-sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        no: p.no,
+        status: s,
+        statusText: statusLabel,
+        branchId: p.branchId || p.originId || 'YGN',
+        branchName: branchLabel
+      })
+    })
+    .then(r => r.json())
+    .then(res => console.log('Supabase Status Synced:', res))
+    .catch(err => console.error('Supabase Status Sync Error:', err));
+  };
+})();

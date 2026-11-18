@@ -165,6 +165,46 @@ app.post('/webhook/pickup-sync', async (req, res) => {
   }
 });
 
+// Staff / Delivery / Admin မှ Status ပြောင်းလဲတိုင်း Supabase parcels ဇယားကို Live Update လုပ်ပေးသည့် API
+app.post('/webhook/status-sync', async (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  const queryFn = (db && db.query) ? db.query : (db && db.pool ? db.pool.query.bind(db.pool) : null);
+  if (!queryFn) {
+    return res.status(500).json({ success: false, message: 'Database query function not available' });
+  }
+  try {
+    const d = req.body || {};
+    const trackingNo = (d.no || '').trim().toUpperCase();
+    if (!trackingNo) return res.status(400).json({ success: false, message: 'Missing tracking number' });
+
+    const statusText = d.statusText || 'အခြေအနေ ပြောင်းလဲပြီး';
+    const branchName = d.branchName || '';
+    const finalStatus = branchName ? `${statusText} (${branchName})` : statusText;
+
+    // နိုင်ငံတကာနှင့် ပြည်တွင်း Hub ID များကို hubs ဇယားတွင် ရှိနေစေရန် အလိုအလျောက် စစ်ဆေးထည့်သွင်းခြင်း
+    const rawHub = (d.branchId || 'YGN').toUpperCase().slice(0, 10);
+    if (branchName) {
+      await queryFn(
+        `INSERT INTO hubs (id, name, city) VALUES ($1, $2, $3)
+         ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name`,
+        [rawHub, branchName, branchName]
+      );
+    }
+
+    await queryFn(
+      `UPDATE parcels
+       SET status = $1, current_hub_id = $2, updated_at = NOW()
+       WHERE UPPER(TRIM(tracking_number)) = $3`,
+      [finalStatus, rawHub, trackingNo]
+    );
+
+    return res.status(200).json({ success: true, trackingNo, status: finalStatus });
+  } catch (err) {
+    console.error('Status Sync Error:', err.message);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // 1. Messenger Verification (GET)
 app.get('/webhook/messenger', (req, res) => {
   const mode = req.query['hub.mode'];
@@ -381,4 +421,5 @@ async function sendViberMessage(receiverId, text) {
 app.use(express.static(path.join(__dirname, '../')));
 
 module.exports = app;
+
 
