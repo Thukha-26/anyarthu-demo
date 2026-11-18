@@ -130,86 +130,50 @@ app.post('/webhook/pickup-sync', async (req, res) => {
     const township = d.township || '-';
     const receiverName = d.receiver || 'လက်ခံသူ';
     const receiverPhone = d.receiverPhone || '-';
+    const receiverAddr = d.receiverAddr || '-';
     const destHub = d.destName || d.destId || 'BKK';
-    const originHub = (d.originId || 'YGN').toUpperCase();
-    const validHub = ['YGN', 'MDY', 'TGI'].includes(originHub) ? originHub : 'YGN';
+    const originHub = (d.originId || 'YGN').toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 10) || 'YGN';
+    const originName = d.originName || originHub;
     const qty = parseInt(d.qty, 10) || 1;
     const statusText = d.statusText || 'စာရင်းသွင်းပြီး (Pickup စောင့်ဆိုင်းဆဲ)';
+
+    await queryFn(`ALTER TABLE parcels ADD COLUMN IF NOT EXISTS sender_name VARCHAR(100)`).catch(() => {});
+    await queryFn(`ALTER TABLE parcels ADD COLUMN IF NOT EXISTS recipient_address TEXT`).catch(() => {});
+    await queryFn(`ALTER TABLE parcels ALTER COLUMN destination_hub TYPE TEXT`).catch(() => {});
+
+    // Origin Hub ကို hubs ဇယားတွင် အလိုအလျောက် စစ်ဆေးထည့်သွင်းခြင်း (ထိုင်း/ကိုရီးယား Hub များအတွက်ပါ အဆင်ပြေစေရန်)
+    await queryFn(
+      `INSERT INTO hubs (id, name, city) VALUES ($1, $2, $3)
+       ON CONFLICT (id) DO NOTHING`,
+      [originHub, originName, originName]
+    );
 
     // 1. pickup_requests ဇယားထဲသို့ ထည့်သွင်းခြင်း
     await queryFn(
       `INSERT INTO pickup_requests (sender_name, sender_phone, address, township, hub_id, item_qty, status, created_at)
        VALUES ($1, $2, $3, $4, $5, $6, 'PENDING', NOW())`,
-      [senderName, senderPhone, pickupAddr, township, validHub, qty]
+      [senderName, senderPhone, pickupAddr, township, originHub, qty]
     );
 
-    // 2. parcels ဇယားထဲသို့ ထည့်သွင်းခြင်း
+    // 2. parcels ဇယားထဲသို့ ကော်လံအသစ်များအပါအဝင် ထည့်သွင်းခြင်း
     if (trackingNo) {
       await queryFn(
-        `INSERT INTO parcels (tracking_number, recipient_name, recipient_phone, destination_hub, current_hub_id, status, updated_at)
-         VALUES ($1, $2, $3, $4, $5, $6, NOW())
+        `INSERT INTO parcels (tracking_number, sender_name, recipient_name, recipient_phone, recipient_address, destination_hub, current_hub_id, status, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
          ON CONFLICT (tracking_number) DO UPDATE SET
+           sender_name = EXCLUDED.sender_name,
            recipient_name = EXCLUDED.recipient_name,
+           recipient_address = EXCLUDED.recipient_address,
            destination_hub = EXCLUDED.destination_hub,
            status = EXCLUDED.status,
            updated_at = NOW()`,
-        [trackingNo, receiverName, receiverPhone, destHub, validHub, statusText]
+        [trackingNo, senderName, receiverName, receiverPhone, receiverAddr, destHub, originHub, statusText]
       );
     }
 
-    console.log('Synced to Supabase:', trackingNo);
     return res.status(200).json({ success: true, trackingNo });
   } catch (err) {
     console.error('Pickup Sync Error:', err.message);
-    return res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-// Staff / Delivery / Admin မှ Status ပြောင်းလဲတိုင်း Supabase parcels နှင့် pickup_requests ကို Live Update လုပ်ပေးသည့် API
-app.post('/webhook/status-sync', async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  const queryFn = (db && db.query) ? db.query : (db && db.pool ? db.pool.query.bind(db.pool) : null);
-  if (!queryFn) {
-    return res.status(500).json({ success: false, message: 'Database query function not available' });
-  }
-  try {
-    const d = req.body || {};
-    const trackingNo = (d.no || '').trim().toUpperCase();
-    if (!trackingNo) return res.status(400).json({ success: false, message: 'Missing tracking number' });
-
-    const rawStatus = d.status || '';
-    const statusText = d.statusText || 'အခြေအနေ ပြောင်းလဲပြီး';
-    const branchName = d.branchName || '';
-    const finalStatus = statusText;
-    const rawHub = (d.branchId || 'YGN').toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 10) || 'YGN';
-
-    if (branchName) {
-      await queryFn(
-        `INSERT INTO hubs (id, name, city) VALUES ($1, $2, $3)
-         ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name`,
-        [rawHub, branchName, branchName]
-      );
-    }
-
-    await queryFn(
-      `UPDATE parcels
-       SET status = $1, current_hub_id = $2, updated_at = NOW()
-       WHERE UPPER(TRIM(tracking_number)) = $3`,
-      [finalStatus, rawHub, trackingNo]
-    );
-
-    // pickup_requests ဇယားထဲမှ Status ကိုပါ တစ်ပါတည်း Update လုပ်ပေးခြင်း
-    if (d.senderPhone) {
-      const reqStatus = rawStatus === 'delivered' ? 'DELIVERED' : rawStatus === 'cancelled' ? 'CANCELLED' : 'ACCEPTED';
-      await queryFn(
-        `UPDATE pickup_requests SET status = $1 WHERE sender_phone = $2 AND status = 'PENDING'`,
-        [reqStatus, d.senderPhone]
-      );
-    }
-
-    return res.status(200).json({ success: true, trackingNo, status: finalStatus });
-  } catch (err) {
-    console.error('Status Sync Error:', err.message);
     return res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -456,6 +420,7 @@ async function sendViberMessage(receiverId, text) {
 app.use(express.static(path.join(__dirname, '../')));
 
 module.exports = app;
+
 
 
 

@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 let cam = null, lastKey = '', prevLangI = LANGS.indexOf(lang);
 const GUARD = { staff: ['admin', 'staff'], scan: ['admin', 'staff', 'delivery'], delivery: ['admin', 'delivery'], admin: ['admin'], label: ['admin', 'staff', 'delivery'], manifest: ['admin', 'staff'], invoice: ['admin', 'staff'], profile: ['admin', 'staff', 'delivery'] };
 const PUBLIC = ['home', 'done', 'track', 'login', 'policy'];
@@ -214,7 +214,7 @@ document.addEventListener('input', e => { if ('filter' in e.target.dataset) { co
         const latest = db.parcels[0];
         if (latest) {
           sendToDb({
-            ...latest,
+            ...latest, originName: typeof bName === 'function' ? bName(latest.originId) : latest.originId,
             destName: typeof bName === 'function' ? bName(latest.destId) : latest.destId,
             statusText: 'စာရင်းသွင်းပြီး (Pickup စောင့်ဆိုင်းဆဲ)'
           });
@@ -229,7 +229,7 @@ document.addEventListener('input', e => { if ('filter' in e.target.dataset) { co
         const latest = db.parcels[0];
         if (latest) {
           sendToDb({
-            ...latest,
+            ...latest, originName: typeof bName === 'function' ? bName(latest.originId) : latest.originId,
             destName: typeof bName === 'function' ? bName(latest.destId) : latest.destId,
             statusText: 'ရုံးခွဲတွင် ပါဆယ်လက်ခံရရှိပြီး'
           });
@@ -252,7 +252,7 @@ document.addEventListener('submit', function(e) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            ...latest,
+            ...latest, originName: typeof bName === 'function' ? bName(latest.originId) : latest.originId,
             destName: typeof bName === 'function' ? bName(latest.destId) : latest.destId,
             statusText: formType === 'pickup' ? 'စာရင်းသွင်းပြီး (Pickup စောင့်ဆိုင်းဆဲ)' : 'ရုံးခွဲတွင် ပါဆယ်လက်ခံရရှိပြီး'
           })
@@ -321,3 +321,4 @@ window.addEventListener('load', function() {
     .catch(err => console.error('Supabase Status Sync Error:', err));
   };
 });
+
