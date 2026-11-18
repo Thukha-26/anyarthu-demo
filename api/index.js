@@ -180,7 +180,7 @@ app.post('/webhook/status-sync', async (req, res) => {
     const rawStatus = d.status || '';
     const statusText = d.statusText || 'အခြေအနေ ပြောင်းလဲပြီး';
     const branchName = d.branchName || '';
-    const finalStatus = branchName ? `${statusText} (${branchName})` : statusText;
+    const finalStatus = statusText;
     const rawHub = (d.branchId || 'YGN').toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 10) || 'YGN';
 
     if (branchName) {
@@ -302,22 +302,48 @@ async function findParcelByTracking(trackingNumber) {
   }
 }
 
-function formatTrackingReply(parcel, rawInput) {
+function formatTrackingReply(parcel, rawCode) {
   if (!parcel) {
-    return `❌ ဘောင်ချာနံပါတ် "${rawInput}" ကို စနစ်ထဲတွင် ရှာမတွေ့ပါရှင်။\n\nနံပါတ် မှန်/မမှန် ပြန်လည်စစ်ဆေးပြီး ထပ်မံပေးပို့ပေးပါနော် 🙏`;
+    return `❌ ဘောင်ချာနံပါတ် "${rawCode}" ကို စနစ်ထဲတွင် ရှာမတွေ့ပါရှင်။\n\nကျေးဇူးပြု၍ နံပါတ် မှန်/မမှန် ပြန်လည်စစ်ဆေးပြီး ထပ်မံပေးပို့ပေးပါ။`;
   }
-  const trackingNo = parcel.tracking_number || rawInput;
-  const receiver = parcel.recipient_name || 'လူကြီးမင်း';
-  const status = parcel.status || 'စီစဉ်ဆောင်ရွက်ဆဲ';
-  const currentHub = parcel.current_hub_name ? ` (${parcel.current_hub_name})` : '';
-  const destHub = parcel.destination_hub || 'သတ်မှတ်မြို့';
 
-  return `✨ အညာသူ Express ပါဆယ်အခြေအနေ\n\n` +
-         `🔖 ဘောင်ချာနံပါတ်\n${trackingNo}\n\n` +
-         `👤 လက်ခံမည့်သူ - ${receiver}\n` +
-         `📍 ပို့ဆောင်မည့်မြို့ - ${destHub}\n\n` +
-         `🚚 လက်ရှိအခြေအနေ\n✅ ${status}${currentHub}\n\n` +
-         `🙏 ကျေးဇူးတင်ပါတယ်ရှင်။ အခြားဝန်ဆောင်မှုများအတွက် အောက်ပါခလုတ်များကို ရွေးချယ်နိုင်ပါတယ်။`;
+  const trackingNo = parcel.tracking_number || rawCode;
+  const receiver = parcel.recipient_name || '-';
+  const destHub = parcel.destination_hub || '-';
+  const hubName = (parcel.current_hub_name || '').trim();
+
+  // စာသားထဲတွင် ရုံးခွဲအမည် နှစ်ထပ်ပါနေပါက အလိုအလျောက် ရှင်းလင်းခြင်း
+  let cleanStatus = (parcel.status || '').trim();
+  if (hubName) {
+    cleanStatus = cleanStatus.replace(`(${hubName})`, '').trim();
+  }
+  cleanStatus = cleanStatus.replace(/\(([^()]+)\)\s*\(\1\)/g, '($1)').trim();
+
+  const updatedTime = parcel.updated_at
+    ? new Date(parcel.updated_at).toLocaleString('en-GB', {
+        timeZone: 'Asia/Yangon',
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    : '';
+
+  return [
+    '✨ အညာသူ Express ပါဆယ်အခြေအနေ',
+    '',
+    `🔖 ဘောင်ချာနံပါတ် : ${trackingNo}`,
+    `👤 လက်ခံမည့်သူ   : ${receiver}`,
+    `📍 ပို့ဆောင်မည့်နေရာ : ${destHub}`,
+    hubName ? `🏢 လက်ရှိရုံးခွဲ     : ${hubName}` : null,
+    '',
+    '🚚 လက်ရှိအခြေအနေ',
+    `✅ ${cleanStatus}`,
+    updatedTime ? `🕒 အချိန် : ${updatedTime}` : null,
+    '',
+    '🙏 ကျေးဇူးတင်ပါတယ်ရှင်။ အခြားဝန်ဆောင်မှုများအတွက် အောက်ပါခလုတ်များကို ရွေးချယ်နိုင်ပါတယ်။'
+  ].filter(line => line !== null).join('\n');
 }
 
 async function handleFacebookMessage(senderId, text, payload = '') {
@@ -430,6 +456,7 @@ async function sendViberMessage(receiverId, text) {
 app.use(express.static(path.join(__dirname, '../')));
 
 module.exports = app;
+
 
 
 
