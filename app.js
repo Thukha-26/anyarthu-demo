@@ -195,3 +195,46 @@ document.addEventListener('change', e => {
   if ('selall' in el.dataset) { $$('.r:not([hidden]) [data-sel]').forEach(c => { c.checked = el.checked; el.checked ? sel.add(c.dataset.sel) : sel.delete(c.dataset.sel); }); updateBulk(); }
 });
 document.addEventListener('input', e => { if ('filter' in e.target.dataset) { const q = e.target.value.trim().toLowerCase(); $$('.r').forEach(r => r.hidden = !r.dataset.s.includes(q)); } });
+
+// ====== SUPABASE LIVE SYNC FOR CUSTOMER PICKUP & COUNTER PARCELS ======
+(function syncWebOrdersToSupabase() {
+  const sendToDb = (payload) => {
+    fetch('/webhook/pickup-sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).catch(err => console.warn('Supabase sync skipped:', err));
+  };
+
+  if (typeof F !== 'undefined') {
+    const origPickup = F.pickup;
+    if (origPickup) {
+      F.pickup = function(d) {
+        origPickup.apply(this, arguments);
+        const latest = db.parcels[0];
+        if (latest) {
+          sendToDb({
+            ...latest,
+            destName: typeof bName === 'function' ? bName(latest.destId) : latest.destId,
+            statusText: 'စာရင်းသွင်းပြီး (Pickup စောင့်ဆိုင်းဆဲ)'
+          });
+        }
+      };
+    }
+
+    const origNewParcel = F.newParcel;
+    if (origNewParcel) {
+      F.newParcel = function(d) {
+        origNewParcel.apply(this, arguments);
+        const latest = db.parcels[0];
+        if (latest) {
+          sendToDb({
+            ...latest,
+            destName: typeof bName === 'function' ? bName(latest.destId) : latest.destId,
+            statusText: 'ရုံးခွဲတွင် ပါဆယ်လက်ခံရရှိပြီး'
+          });
+        }
+      };
+    }
+  }
+})();

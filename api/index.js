@@ -114,6 +114,54 @@ app.get('/webhook/track', async (req, res) => {
   return res.status(200).json({ found: true, parcel });
 });
 
+// Website မှ Pickup / Parcel အသစ်တင်တိုင်း Supabase Database ထဲသို့ တိုက်ရိုက်သွင်းပေးသည့် API
+app.post('/webhook/pickup-sync', async (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  if (!db || !db.pool) {
+    return res.status(500).json({ success: false, message: 'Database connection not ready' });
+  }
+  try {
+    const d = req.body || {};
+    const trackingNo = (d.no || '').trim().toUpperCase();
+    const senderName = d.sender || 'Web Customer';
+    const senderPhone = d.senderPhone || '-';
+    const pickupAddr = d.pickupAddr || '-';
+    const township = d.township || '-';
+    const receiverName = d.receiver || 'လက်ခံသူ';
+    const receiverPhone = d.receiverPhone || '-';
+    const destHub = d.destName || d.destId || 'BKK';
+    const originHub = (d.originId || 'YGN').toUpperCase();
+    const qty = parseInt(d.qty, 10) || 1;
+    const statusText = d.statusText || 'စာရင်းသွင်း လက်ခံပြီး (Pickup တောင်းဆိုဆဲ)';
+
+    // 1. pickup_requests ဇယားထဲသို့ ထည့်သွင်းခြင်း
+    await db.pool.query(
+      `INSERT INTO pickup_requests (sender_name, sender_phone, address, township, hub_id, item_qty, status, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, 'PENDING', NOW())`,
+      [senderName, senderPhone, pickupAddr, township, ['YGN','MDY','TGI'].includes(originHub) ? originHub : 'YGN', qty]
+    );
+
+    // 2. parcels ဇယားထဲသို့ ထည့်သွင်းခြင်း (Messenger Bot နှင့် Tracking စာမျက်နှာတွင် ချက်ချင်းရှာတွေ့စေရန်)
+    if (trackingNo) {
+      await db.pool.query(
+        `INSERT INTO parcels (tracking_number, recipient_name, recipient_phone, destination_hub, current_hub_id, status, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, NOW())
+         ON CONFLICT (tracking_number) DO UPDATE SET
+           recipient_name = EXCLUDED.recipient_name,
+           destination_hub = EXCLUDED.destination_hub,
+           status = EXCLUDED.status,
+           updated_at = NOW()`,
+        [trackingNo, receiverName, receiverPhone, destHub, ['YGN','MDY','TGI'].includes(originHub) ? originHub : 'YGN', statusText]
+      );
+    }
+
+    return res.status(200).json({ success: true, trackingNo });
+  } catch (err) {
+    console.error('Pickup Sync Error:', err.message);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // 1. Messenger Verification (GET)
 app.get('/webhook/messenger', (req, res) => {
   const mode = req.query['hub.mode'];
