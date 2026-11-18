@@ -259,9 +259,7 @@ async function findParcelByTracking(trackingNumber) {
     }
     const cleanNo = trackingNumber.trim().toUpperCase();
     const queryText = `
-      SELECT p.tracking_number, p.recipient_name, p.status, p.destination_hub,
-             h.name as current_hub_name
-      FROM parcels p
+      SELECT p.*, h.name AS current_hub_name FROM parcels p
       LEFT JOIN hubs h ON p.current_hub_id = h.id
       WHERE UPPER(TRIM(p.tracking_number)) = $1
       LIMIT 1;
@@ -281,10 +279,11 @@ function formatTrackingReply(parcel, rawCode) {
 
   const trackingNo = parcel.tracking_number || rawCode;
   const receiver = parcel.recipient_name || '-';
-  const destHub = parcel.destination_hub || '-';
+  const rawAddr = (parcel.recipient_address || '').trim();
+  const destHub = (parcel.destination_hub || '').trim();
+  const deliveryAddr = (rawAddr && rawAddr !== '-') ? rawAddr : (destHub || '-');
   const hubName = (parcel.current_hub_name || '').trim();
 
-  // စာသားထဲတွင် ရုံးခွဲအမည် နှစ်ထပ်ပါနေပါက အလိုအလျောက် ရှင်းလင်းခြင်း
   let cleanStatus = (parcel.status || '').trim();
   if (hubName) {
     cleanStatus = cleanStatus.replace(`(${hubName})`, '').trim();
@@ -307,7 +306,7 @@ function formatTrackingReply(parcel, rawCode) {
     '',
     `🔖 ဘောင်ချာနံပါတ် : ${trackingNo}`,
     `👤 လက်ခံမည့်သူ   : ${receiver}`,
-    `📍 ပို့ဆောင်မည့်နေရာ : ${destHub}`,
+    `📍 ပို့ဆောင်မည့်လိပ်စာ : ${deliveryAddr}`,
     hubName ? `🏢 လက်ရှိရုံးခွဲ     : ${hubName}` : null,
     '',
     '🚚 လက်ရှိအခြေအနေ',
@@ -428,6 +427,7 @@ async function sendViberMessage(receiverId, text) {
 app.use(express.static(path.join(__dirname, '../')));
 
 module.exports = app;
+
 
 
 
