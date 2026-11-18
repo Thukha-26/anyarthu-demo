@@ -107,15 +107,20 @@ async function findParcelByTracking(trackingNumber) {
 
 function formatTrackingReply(parcel, rawInput) {
   if (!parcel) {
-    return `❌ နံပါတ် "${rawInput}" အား စနစ်ထဲတွင် ရှာမတွေ့ပါ။ Tracking Number ကို ပြန်လည်စစ်ဆေးပေးပါရှင်။`;
+    return `❌ ဘောင်ချာနံပါတ် "${rawInput}" ကို စနစ်ထဲတွင် ရှာမတွေ့ပါရှင်။\n\nနံပါတ် မှန်/မမှန် ပြန်လည်စစ်ဆေးပြီး ထပ်မံပေးပို့ပေးပါနော် 🙏`;
   }
   const trackingNo = parcel.tracking_number || rawInput;
-  const receiver = parcel.recipient_name || 'စမ်းသပ်သူ';
-  const status = parcel.status || 'သတ်မှတ်ဆဲ';
-  const currentHub = parcel.current_hub_name || 'မန္တလေး ရုံးခွဲ';
-  const destHub = parcel.destination_hub || 'မန္တလေး';
+  const receiver = parcel.recipient_name || 'လူကြီးမင်း';
+  const status = parcel.status || 'စီစဉ်ဆောင်ရွက်ဆဲ';
+  const currentHub = parcel.current_hub_name ? ` (${parcel.current_hub_name})` : '';
+  const destHub = parcel.destination_hub || 'သတ်မှတ်မြို့';
 
-  return `📦 ပါဆယ်နံပါတ်: ${trackingNo}\n👤 လက်ခံသူ: ${receiver}\n🚚 အခြေအနေ: ${status}\n🏢 လက်ရှိရုံး: ${currentHub}\n📍 ပန်းတိုင်: ${destHub}`;
+  return `✨ အညာသူ Express ပါဆယ်အခြေအနေ\n\n` +
+         `🔖 ဘောင်ချာနံပါတ်\n${trackingNo}\n\n` +
+         `👤 လက်ခံမည့်သူ - ${receiver}\n` +
+         `📍 ပို့ဆောင်မည့်မြို့ - ${destHub}\n\n` +
+         `🚚 လက်ရှိအခြေအနေ\n✅ ${status}${currentHub}\n\n` +
+         `🙏 ကျေးဇူးတင်ပါတယ်ရှင်။ အခြားပါဆယ် စစ်ဆေးလိုပါက ဘောင်ချာနံပါတ် ထပ်မံပေးပို့နိုင်ပါတယ်။`;
 }
 
 async function handleFacebookMessage(senderId, text) {
