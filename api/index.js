@@ -27,7 +27,7 @@ const MAIN_QUICK_REPLIES = [
   { content_type: 'text', title: '👤 Admin နဲ့ပြောမယ်', payload: 'MENU_ADMIN' }
 ];
 
-// ရုံးခွဲလိပ်စာများ (လိပ်စာ/ဖုန်း အမှန်များကို ဤနေရာတွင် ပြင်ဆင်နိုင်ပါသည်)
+// ရုံးခွဲလိပ်စာများ
 const BRANCH_ADDRESSES_TEXT =
   `🏢 အညာသူ Express ရုံးခွဲလိပ်စာများ\n\n` +
   `📍 ရန်ကုန် ဗဟို Hub\n` +
@@ -40,6 +40,65 @@ const BRANCH_ADDRESSES_TEXT =
   `လိပ်စာ - [တောင်ကြီး ရုံးခွဲလိပ်စာ ထည့်ရန်]\n` +
   `ဖုန်း - 09-333333333\n\n` +
   `⏰ ရုံးချိန် - နံနက် ၈:၃၀ မှ ညနေ ၅:၃၀ ထိ`;
+
+// 0. Message Box ဝင်တာနဲ့ ခလုတ်များ တန်းပေါ်စေရန် Messenger Profile ဖွင့်ပေးသည့် Endpoint
+app.get('/webhook/setup-profile', async (req, res) => {
+  if (!FB_PAGE_ACCESS_TOKEN) {
+    return res.status(500).json({ error: 'FB_PAGE_ACCESS_TOKEN မတွေ့ပါ' });
+  }
+  try {
+    const profilePayload = {
+      get_started: { payload: 'GET_STARTED' },
+      greeting: [
+        {
+          locale: 'default',
+          text: 'မင်္ဂလာပါ {{user_first_name}} 🙏 အညာသူ Express Cargo မှ ကြိုဆိုပါတယ်။ အောက်ပါခလုတ်များကို နှိပ်၍ စတင်အသုံးပြုနိုင်ပါတယ်ရှင်။'
+        }
+      ],
+      ice_breakers: [
+        {
+          question: '🏢 ရုံးခွဲလိပ်စာ',
+          payload: 'MENU_BRANCHES'
+        },
+        {
+          question: '📦 Parcel အခြေအနေ',
+          payload: 'MENU_TRACKING'
+        },
+        {
+          question: '👤 Admin နဲ့ပြောမယ်',
+          payload: 'MENU_ADMIN'
+        }
+      ],
+      persistent_menu: [
+        {
+          locale: 'default',
+          composer_input_disabled: false,
+          call_to_actions: [
+            { type: 'postback', title: '🏢 ရုံးခွဲလိပ်စာ', payload: 'MENU_BRANCHES' },
+            { type: 'postback', title: '📦 Parcel အခြေအနေ', payload: 'MENU_TRACKING' },
+            { type: 'postback', title: '👤 Admin နဲ့ပြောမယ်', payload: 'MENU_ADMIN' }
+          ]
+        }
+      ]
+    };
+
+    const response = await axios.post(
+      `https://graph.facebook.com/v21.0/me/messenger_profile?access_token=${FB_PAGE_ACCESS_TOKEN}`,
+      profilePayload
+    );
+    return res.status(200).json({
+      success: true,
+      message: 'Get Started, Ice Breakers နှင့် Persistent Menu များ အောင်မြင်စွာ ဖွင့်ပြီးပါပြီ!',
+      meta_response: response.data
+    });
+  } catch (err) {
+    console.error('Messenger Profile Setup Error:', err.response?.data || err.message);
+    return res.status(500).json({
+      success: false,
+      error: err.response?.data || err.message
+    });
+  }
+});
 
 // 1. Messenger Verification (GET)
 app.get('/webhook/messenger', (req, res) => {
@@ -151,7 +210,7 @@ async function handleFacebookMessage(senderId, text, payload = '') {
   const cleanInput = text.trim();
   const lowerInput = cleanInput.toLowerCase();
 
-  // ၁။ မင်္ဂလာပါ / Menu
+  // ၁။ Get Started / မင်္ဂလာပါ / Menu
   if (
     payload === 'GET_STARTED' ||
     cleanInput === 'မင်္ဂလာပါ' ||
