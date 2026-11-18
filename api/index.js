@@ -100,6 +100,20 @@ app.get('/webhook/setup-profile', async (req, res) => {
   }
 });
 
+// Website Frontend မှ ပါဆယ်ရှာဖွေရန် API Endpoint
+app.get('/webhook/track', async (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  const code = (req.query.code || '').trim();
+  if (!code) {
+    return res.status(400).json({ found: false, message: 'Tracking number ထည့်သွင်းပါ' });
+  }
+  const parcel = await findParcelByTracking(code);
+  if (!parcel) {
+    return res.status(404).json({ found: false, message: `နံပါတ် "${code}" အား ရှာမတွေ့ပါ` });
+  }
+  return res.status(200).json({ found: true, parcel });
+});
+
 // 1. Messenger Verification (GET)
 app.get('/webhook/messenger', (req, res) => {
   const mode = req.query['hub.mode'];

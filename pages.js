@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 const P = {};
 const state = { adminBranch: '', scanMode: '', scanNext: '', board: 'pickups', rFrom: '', rTo: '', rBranch: '', pfs: '', pfb: '' };
 const sel = new Set();
@@ -50,21 +50,46 @@ function stepIndex(p) {
 }
 const whereText = e => e.status === 'departed' && e.nextId ? `${bName(e.branchId)} → ${bName(e.nextId)}` : bName(e.branchId);
 P.track = no => {
-  const v = no ? decodeURIComponent(no) : '', p = parcel(v);
+  const v = no ? decodeURIComponent(no).trim().toUpperCase() : '', p = parcel(v);
   if (p) { let r = []; try { r = JSON.parse(store.get('anyarthu-recent') || '[]'); } catch (e) {} store.set('anyarthu-recent', JSON.stringify([p.no, ...r.filter(x => x !== p.no)].slice(0, 5))); }
   let recent = []; try { recent = JSON.parse(store.get('anyarthu-recent') || '[]'); } catch (e) {}
   const ev = p ? db.events.filter(e => e.no === p.no && !e.internal) : [], i = p ? stepIndex(p) : 0;
   const tone = p && (['failed', 'cancelled', 'returned'].includes(p.status) || p.returning ? 'red' : p.status === 'delivered' ? 'green' : '');
-  return `<div class="wrap page"><div class="narrow stack stagger" style="max-width:760px"><div class="card pad"><form data-form="track" class="stack" style="gap:10px"><div class="row" style="flex-wrap:nowrap">${`<input class="inp ${v && !p ? 'shake' : ''}" name="no" value="${esc(v)}" required aria-label="${t('trackNo')}" placeholder="${t('trackNo')}">`}<button type="button" class="qrbtn line" data-act="scanTrack" aria-label="${t('scanQr')}" title="${t('scanQr')}">${ic('qr', 21, 2)}</button><button class="btn">${ic('search', 18, 2.3)}${t('search')}</button></div>${recent.length ? `<div class="recent">${recent.map(r => `<a href="#/track/${encodeURIComponent(r)}">${esc(r)}</a>`).join('')}</div>` : ''}</form></div>
-  ${v && !p ? `<p class="note">${t('notFound')}</p>` : ''}
-  ${p ? `<section class="card tcard"><div class="thead ${tone}"><small>${t('trackNo')}</small><div class="no">${esc(p.no)}</div><div class="now">${t(p.returning && p.status !== 'returned' ? 's_returning' : 's_' + p.status)}</div><span style="font-size:14px">${p.branchId ? ic('pin', 15) + ' ' + esc(bName(p.branchId)) + ' · ' : ''}${t('lastUpdate')}: ${fmt(ev[0].at)}</span></div>
+
+  if (v) {
+    setTimeout(async () => {
+      const box = document.getElementById('sb-track-box');
+      if (!box) return;
+      try {
+        const res = await fetch('/webhook/track?code=' + encodeURIComponent(v));
+        const data = await res.json();
+        if (data && data.found && data.parcel) {
+          const sp = data.parcel;
+          let r = []; try { r = JSON.parse(store.get('anyarthu-recent') || '[]'); } catch (e) {}
+          store.set('anyarthu-recent', JSON.stringify([sp.tracking_number, ...r.filter(x => x !== sp.tracking_number)].slice(0, 5)));
+          box.innerHTML = `<section class="card tcard">
+            <div class="thead"><small>ဘောင်ချာနံပါတ် / Tracking No</small><div class="no">${esc(sp.tracking_number)}</div><div class="now">${esc(sp.status)}</div><span style="font-size:14px">${ic('pin', 15)} ${esc(sp.current_hub_name || 'လမ်းခရီးတွင်')}</span></div>
+            <div class="routebox"><div><small>လက်ခံမည့်သူ</small><b>${esc(sp.recipient_name)}</b></div><span class="mid"></span>${ic('truck', 20)}<span class="mid"></span><div style="text-align:right"><small>ပို့ဆောင်မည့်မြို့</small><b>${esc(sp.destination_hub)}</b></div></div>
+            <div class="pad" style="padding-top:12px"><div class="row between"><span class="muted">လက်ရှိရုံးခွဲ: <b>${esc(sp.current_hub_name || '-')}</b></span><button class="btn sm line" data-act="copy" data-v="${esc(trackUrl(sp.tracking_number))}">${ic('copy', 16)}${t('copyLink')}</button></div></div>
+          </section>`;
+        } else if (!p) {
+          box.innerHTML = `<p class="note">❌ ဘောင်ချာနံပါတ် "${esc(v)}" ကို စနစ်ထဲတွင် ရှာမတွေ့ပါရှင်။</p>`;
+        }
+      } catch (err) {
+        if (!p) box.innerHTML = `<p class="note">${t('notFound')}</p>`;
+      }
+    }, 0);
+  }
+
+  return `<div class="wrap page"><div class="narrow stack stagger" style="max-width:760px"><div class="card pad"><form data-form="track" class="stack" style="gap:10px"><div class="row" style="flex-wrap:nowrap"><input class="inp" name="no" value="${esc(v)}" required aria-label="${t('trackNo')}" placeholder="${t('trackNo')}"><button type="button" class="qrbtn line" data-act="scanTrack" aria-label="${t('scanQr')}" title="${t('scanQr')}">${ic('qr', 21, 2)}</button><button class="btn">${ic('search', 18, 2.3)}${t('search')}</button></div>${recent.length ? `<div class="recent">${recent.map(r => `<a href="#/track/${encodeURIComponent(r)}">${esc(r)}</a>`).join('')}</div>` : ''}</form></div>
+  <div id="sb-track-box">${v && !p ? `<p class="note">🔍 ဘောင်ချာနံပါတ် "${esc(v)}" ကို ရှာဖွေနေပါသည်...</p>` : ''}${p ? `<section class="card tcard"><div class="thead ${tone}"><small>${t('trackNo')}</small><div class="no">${esc(p.no)}</div><div class="now">${t(p.returning && p.status !== 'returned' ? 's_returning' : 's_' + p.status)}</div><span style="font-size:14px">${p.branchId ? ic('pin', 15) + ' ' + esc(bName(p.branchId)) + ' · ' : ''}${t('lastUpdate')}: ${ev[0] ? fmt(ev[0].at) : ''}</span></div>
     ${p.status !== 'cancelled' && !p.returning ? `<div class="prog" style="--p:${i / 5 * 100}%"><div class="pline"><div class="pfill"></div><div class="prail"><div class="ptruck">${ic(p.status === 'delivered' ? 'boxcheck' : 'truck', 22)}</div></div></div><div class="psteps">${STEPS.map((s, n) => `<div class="pstep ${n <= i ? 'on' : ''} ${n === i ? 'cur' : ''}"><i></i><span>${t('p_' + s)}</span></div>`).join('')}</div></div>` : ''}
     ${routeBar(p)}<div class="routebox"><div><small>${t('origin')}</small><b>${esc(bName(p.originId))}</b></div><span class="mid"></span>${ic('truck', 20)}<span class="mid"></span><div style="text-align:right"><small>${t('destBranch')}</small><b>${esc(bName(p.destId))}</b></div></div>
     ${p.proof ? `<div class="note" style="margin:0 24px 12px">${ic('boxcheck', 16)} ${t('receivedBy')}: <b>${esc(p.proof.name)}</b> · ${fmt(p.proof.at)}</div>` : ''}
     ${p.status === 'failed' && p.failReason ? `<div class="note" style="margin:0 24px 12px">${ic('alert', 16)} ${t('fr_' + p.failReason)}${noAnsCount(p) ? ' × ' + noAnsCount(p) : ''}</div>` : ''}
     ${p.branchId ? `<div class="row" style="margin:0 24px 12px"><a class="btn sm line" href="tel:${esc((db.branches.find(b => b.id === p.branchId) || {}).phone)}">${ic('phone', 16)}${esc(bName(p.branchId))}</a><span class="chip">${ic(METHOD_IC[p.method || 'road'], 13, 2.3)}${t('m_' + (p.method || 'road'))}</span></div>` : ''}
     <div class="pad" style="padding-top:8px"><div class="row between" style="margin-bottom:14px"><h2 class="h2">${t('history')}</h2><button class="btn sm line" data-act="copy" data-v="${esc(trackUrl(p.no))}">${ic('copy', 16)}${t('copyLink')}</button></div>
-    <ol class="tl">${ev.map((e, n) => `<li style="animation-delay:${n * .07}s">${tile(STATUS[e.status][0], STATUS[e.status][1], 21)}<div><b>${t('s_' + e.status)}</b><span class="muted">${esc(whereText(e))}${whereText(e) ? ' · ' : ''}${fmt(e.at)}</span></div></li>`).join('')}</ol></div></section>` : ''}</div></div>`;
+    <ol class="tl">${ev.map((e, n) => `<li style="animation-delay:${n * .07}s">${tile(STATUS[e.status][0], STATUS[e.status][1], 21)}<div><b>${t('s_' + e.status)}</b><span class="muted">${esc(whereText(e))}${whereText(e) ? ' · ' : ''}${fmt(e.at)}</span></div></li>`).join('')}</ol></div></section>` : ''}</div></div></div>`;
 };
 /* ---------- shared rows ---------- */
 function row(p, actions = '', o = {}) {
@@ -143,3 +168,4 @@ P.label = arg => {
   if (!list.length) return `<p class="note">${t('notFound')}</p>`;
   return `<div class="stack"><div class="row noprint" style="justify-content:center"><button class="btn gold" data-act="print">${ic('print', 18)}${t('printLabel')}</button><button class="btn line" data-act="back">${t('back')}</button></div>${list.map(labelHTML).join('')}</div>`;
 };
+
