@@ -20,6 +20,27 @@ const FB_PAGE_ACCESS_TOKEN = process.env.FB_PAGE_ACCESS_TOKEN;
 const FB_VERIFY_TOKEN = process.env.FB_VERIFY_TOKEN || 'anyarthu_free_token_2026';
 const VIBER_AUTH_TOKEN = process.env.VIBER_AUTH_TOKEN;
 
+// Quick Reply ခလုတ် (၃) ခု
+const MAIN_QUICK_REPLIES = [
+  { content_type: 'text', title: '🏢 ရုံးခွဲလိပ်စာ', payload: 'MENU_BRANCHES' },
+  { content_type: 'text', title: '📦 Parcel အခြေအနေ', payload: 'MENU_TRACKING' },
+  { content_type: 'text', title: '👤 Admin နဲ့ပြောမယ်', payload: 'MENU_ADMIN' }
+];
+
+// ရုံးခွဲလိပ်စာများ (လိပ်စာ/ဖုန်း အမှန်များကို ဤနေရာတွင် ပြင်ဆင်နိုင်ပါသည်)
+const BRANCH_ADDRESSES_TEXT =
+  `🏢 အညာသူ Express ရုံးခွဲလိပ်စာများ\n\n` +
+  `📍 ရန်ကုန် ဗဟို Hub\n` +
+  `လိပ်စာ - [ရန်ကုန် ရုံးခွဲလိပ်စာ ထည့်ရန်]\n` +
+  `ဖုန်း - 09-111111111\n\n` +
+  `📍 မန္တလေး ရုံးခွဲ\n` +
+  `လိပ်စာ - [မန္တလေး ရုံးခွဲလိပ်စာ ထည့်ရန်]\n` +
+  `ဖုန်း - 09-222222222\n\n` +
+  `📍 တောင်ကြီး ရုံးခွဲ\n` +
+  `လိပ်စာ - [တောင်ကြီး ရုံးခွဲလိပ်စာ ထည့်ရန်]\n` +
+  `ဖုန်း - 09-333333333\n\n` +
+  `⏰ ရုံးချိန် - နံနက် ၈:၃၀ မှ ညနေ ၅:၃၀ ထိ`;
+
 // 1. Messenger Verification (GET)
 app.get('/webhook/messenger', (req, res) => {
   const mode = req.query['hub.mode'];
@@ -45,12 +66,15 @@ app.post('/webhook/messenger', async (req, res) => {
       for (const entry of body.entry) {
         if (!entry || !Array.isArray(entry.messaging)) continue;
         for (const webhookEvent of entry.messaging) {
-          if (webhookEvent && webhookEvent.message && webhookEvent.message.text) {
-            const senderId = webhookEvent.sender?.id;
+          const senderId = webhookEvent.sender?.id;
+          if (!senderId) continue;
+
+          if (webhookEvent.message && webhookEvent.message.text) {
             const userText = webhookEvent.message.text.trim();
-            if (senderId && userText) {
-              await handleFacebookMessage(senderId, userText);
-            }
+            const payload = webhookEvent.message.quick_reply?.payload || '';
+            await handleFacebookMessage(senderId, userText, payload);
+          } else if (webhookEvent.postback && webhookEvent.postback.payload) {
+            await handleFacebookMessage(senderId, webhookEvent.postback.title || '', webhookEvent.postback.payload);
           }
         }
       }
@@ -120,21 +144,56 @@ function formatTrackingReply(parcel, rawInput) {
          `👤 လက်ခံမည့်သူ - ${receiver}\n` +
          `📍 ပို့ဆောင်မည့်မြို့ - ${destHub}\n\n` +
          `🚚 လက်ရှိအခြေအနေ\n✅ ${status}${currentHub}\n\n` +
-         `🙏 ကျေးဇူးတင်ပါတယ်ရှင်။ အခြားပါဆယ် စစ်ဆေးလိုပါက ဘောင်ချာနံပါတ် ထပ်မံပေးပို့နိုင်ပါတယ်။`;
+         `🙏 ကျေးဇူးတင်ပါတယ်ရှင်။ အခြားဝန်ဆောင်မှုများအတွက် အောက်ပါခလုတ်များကို ရွေးချယ်နိုင်ပါတယ်။`;
 }
 
-async function handleFacebookMessage(senderId, text) {
-  let replyText = '';
+async function handleFacebookMessage(senderId, text, payload = '') {
   const cleanInput = text.trim();
+  const lowerInput = cleanInput.toLowerCase();
 
-  if (cleanInput === 'မင်္ဂလာပါ' || cleanInput.toLowerCase() === 'hi' || cleanInput.toLowerCase() === 'hello') {
-    replyText = 'မင်္ဂလာပါရှင်။ အညာသူ Express မှ ကြိုဆိုပါတယ်။ ပါဆယ်စစ်ဆေးရန် Tracking နံပါတ် (ဥပမာ- TEST-001 သို့မဟုတ် AT-2611-00492) ကို ရိုက်ပို့ပေးပါရှင်။';
-  } else {
-    const parcel = await findParcelByTracking(cleanInput);
-    replyText = formatTrackingReply(parcel, cleanInput);
+  // ၁။ မင်္ဂလာပါ / Menu
+  if (
+    payload === 'GET_STARTED' ||
+    cleanInput === 'မင်္ဂလာပါ' ||
+    lowerInput === 'hi' ||
+    lowerInput === 'hello' ||
+    lowerInput === 'menu'
+  ) {
+    const welcomeText =
+      `မင်္ဂလာပါရှင် 🙏 အညာသူ Express မှ ကြိုဆိုပါတယ်။\n\n` +
+      `လူကြီးမင်း သိရှိလိုသည်များကို အောက်ပါခလုတ်များမှတစ်ဆင့် ရွေးချယ်နိုင်ပါတယ်ရှင် 👇`;
+    await sendFacebookMessage(senderId, welcomeText, MAIN_QUICK_REPLIES);
+    return;
   }
 
-  await sendFacebookMessage(senderId, replyText);
+  // ၂။ ရုံးခွဲလိပ်စာ
+  if (payload === 'MENU_BRANCHES' || cleanInput.includes('ရုံးခွဲလိပ်စာ')) {
+    await sendFacebookMessage(senderId, BRANCH_ADDRESSES_TEXT, MAIN_QUICK_REPLIES);
+    return;
+  }
+
+  // ၃။ Parcel အခြေအနေ
+  if (payload === 'MENU_TRACKING' || cleanInput.includes('Parcel အခြေအနေ') || cleanInput.includes('ပါဆယ်အခြေအနေ')) {
+    const trackPrompt =
+      `📦 ပါဆယ်အခြေအနေ စစ်ဆေးရန် လူကြီးမင်း၏ ဘောင်ချာနံပါတ် ကို ရိုက်ထည့်ပေးပို့ပေးပါရှင် 🔖\n\n` +
+      `(ဥပမာ - AT-2611-00492 သို့မဟုတ် TEST-001)`;
+    await sendFacebookMessage(senderId, trackPrompt, MAIN_QUICK_REPLIES);
+    return;
+  }
+
+  // ၄။ Admin နဲ့ပြောမယ်
+  if (payload === 'MENU_ADMIN' || cleanInput.includes('Admin နဲ့ပြောမယ်')) {
+    const adminText =
+      `👤 Page Admin ထံ တိုက်ရိုက်ဆက်သွယ်ရန် စာရင်းသွင်းပေးထားပါတယ်ရှင်။\n\n` +
+      `လူကြီးမင်း မေးမြန်းလိုသည့် အကြောင်းအရာကို ဤနေရာတွင် ရေးသားပေးပို့ထားနိုင်ပါတယ်။ Admin မှ အမြန်ဆုံး ပြန်လည်ဖြေကြားပေးပါမယ်ရှင် 🙏`;
+    await sendFacebookMessage(senderId, adminText, MAIN_QUICK_REPLIES);
+    return;
+  }
+
+  // ၅။ ဘောင်ချာနံပါတ် ရိုက်ပို့လာပါက ရှာဖွေပေးခြင်း
+  const parcel = await findParcelByTracking(cleanInput);
+  const replyText = formatTrackingReply(parcel, cleanInput);
+  await sendFacebookMessage(senderId, replyText, MAIN_QUICK_REPLIES);
 }
 
 async function handleViberMessage(senderId, text) {
@@ -142,7 +201,9 @@ async function handleViberMessage(senderId, text) {
   const cleanInput = text.trim();
 
   if (cleanInput === 'မင်္ဂလာပါ' || cleanInput.toLowerCase() === 'hi') {
-    replyText = 'မင်္ဂလာပါရှင်။ အညာသူ Express Tracking Bot မှ ကြိုဆိုပါတယ်။ ပါဆယ်စစ်ဆေးရန် Tracking နံပါတ် ရိုက်ထည့်ပေးပါရှင်။';
+    replyText = 'မင်္ဂလာပါရှင်။ အညာသူ Express Tracking Bot မှ ကြိုဆိုပါတယ်။ ပါဆယ်စစ်ဆေးရန် ဘောင်ချာနံပါတ် ရိုက်ထည့်ပေးပါရှင်။';
+  } else if (cleanInput.includes('ရုံးခွဲလိပ်စာ')) {
+    replyText = BRANCH_ADDRESSES_TEXT;
   } else {
     const parcel = await findParcelByTracking(cleanInput);
     replyText = formatTrackingReply(parcel, cleanInput);
@@ -151,14 +212,19 @@ async function handleViberMessage(senderId, text) {
   await sendViberMessage(senderId, replyText);
 }
 
-async function sendFacebookMessage(recipientId, text) {
+async function sendFacebookMessage(recipientId, text, quickReplies = null) {
   if (!FB_PAGE_ACCESS_TOKEN) return;
   try {
+    const messagePayload = { text: text };
+    if (Array.isArray(quickReplies) && quickReplies.length > 0) {
+      messagePayload.quick_replies = quickReplies;
+    }
+
     await axios.post(
       `https://graph.facebook.com/v21.0/me/messages?access_token=${FB_PAGE_ACCESS_TOKEN}`,
       {
         recipient: { id: recipientId },
-        message: { text: text }
+        message: messagePayload
       }
     );
     console.log(`FB message sent to ${recipientId}`);
