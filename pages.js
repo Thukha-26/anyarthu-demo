@@ -67,11 +67,68 @@ P.track = no => {
           const sp = data.parcel;
           let r = []; try { r = JSON.parse(store.get('anyarthu-recent') || '[]'); } catch (e) {}
           store.set('anyarthu-recent', JSON.stringify([sp.tracking_number, ...r.filter(x => x !== sp.tracking_number)].slice(0, 5)));
-          box.innerHTML = `<section class="card tcard">
-            <div class="thead"><small>ဘောင်ချာနံပါတ် / Tracking No</small><div class="no">${esc(sp.tracking_number)}</div><div class="now">${esc(sp.status)}</div><span style="font-size:14px">${ic('pin', 15)} ${esc(sp.current_hub_name || 'လမ်းခရီးတွင်')}</span></div>
-            <div class="routebox"><div><small>လက်ခံမည့်သူ</small><b>${esc(sp.recipient_name)}</b></div><span class="mid"></span>${ic('truck', 20)}<span class="mid"></span><div style="text-align:right"><small>ပို့ဆောင်မည့်မြို့</small><b>${esc(sp.destination_hub)}</b></div></div>
-            <div class="pad" style="padding-top:12px"><div class="row between"><span class="muted">လက်ရှိရုံးခွဲ: <b>${esc(sp.current_hub_name || '-')}</b></span><button class="btn sm line" data-act="copy" data-v="${esc(trackUrl(sp.tracking_number))}">${ic('copy', 16)}${t('copyLink')}</button></div></div>
+
+          // Status အလိုက် Animation Step Index သတ်မှတ်ခြင်း (0 မှ 5)
+          const stText = sp.status || '';
+          let sIdx = 2;
+          let toneCls = '';
+          if (stText.includes('ပို့ဆောင်ပြီး') || stText.includes('ရောက်ပြီး')) { sIdx = 5; toneCls = 'green'; }
+          else if (stText.includes('ပို့ဆောင်နေ')) { sIdx = 4; }
+          else if (stText.includes('ရုံးရောက်ရှိ') || stText.includes('ဆိုက်ရောက်')) { sIdx = 3; }
+          else if (stText.includes('ထွက်ခွာ') || stText.includes('လမ်းခရီး')) { sIdx = 2; }
+          else if (stText.includes('စာရင်း')) { sIdx = 0; }
+
+          const hubLabel = sp.current_hub_name || 'ရန်ကုန် ဗဟို Hub';
+          const destLabel = sp.destination_hub || 'မန္တလေး';
+          const nowTime = fmt(Date.now());
+
+          // Timeline မှတ်တမ်း Animation အတွက် အဆင့်များ တည်ဆောက်ခြင်း
+          const timelineSteps = [
+            { icon: 'boxcheck', color: 'green', title: stText, where: hubLabel, time: nowTime }
+          ];
+          if (sIdx >= 3) {
+            timelineSteps.push({ icon: 'truck', color: 'teal', title: 'ကား/လေယာဉ်ထွက်ခွာပြီး', where: `ရန်ကုန် ဗဟို Hub → ${hubLabel}`, time: nowTime });
+          }
+          timelineSteps.push({ icon: 'box', color: 'blue', title: 'စာရင်းသွင်း လက်ခံပြီး', where: 'ရန်ကုန် ဗဟို Hub', time: nowTime });
+
+          box.innerHTML = `<section class="card tcard enter">
+            <div class="thead ${toneCls}">
+              <small>${t('trackNo')}</small>
+              <div class="no">${esc(sp.tracking_number)}</div>
+              <div class="now">${esc(stText)}</div>
+              <span style="font-size:14px">${ic('pin', 15)} ${esc(hubLabel)} · ${t('lastUpdate')}: ${nowTime}</span>
+            </div>
+            <div class="prog" id="sb-prog" style="--p:0%">
+              <div class="pline"><div class="pfill"></div><div class="prail"><div class="ptruck">${ic(sIdx === 5 ? 'boxcheck' : 'truck', 22)}</div></div></div>
+              <div class="psteps">${STEPS.map((s, n) => `<div class="pstep ${n <= sIdx ? 'on' : ''} ${n === sIdx ? 'cur' : ''}"><i></i><span>${t('p_' + s)}</span></div>`).join('')}</div>
+            </div>
+            <div class="routebar"><span class="chip teal">${ic('truck', 13, 2.2)}ပြည်တွင်း အမြန်ချောပို့</span></div>
+            <div class="routebox">
+              <div><small>${t('origin')}</small><b>ရန်ကုန် (ရုံးချုပ်)</b></div>
+              <span class="mid"></span>${ic('truck', 20)}<span class="mid"></span>
+              <div style="text-align:right"><small>${t('destBranch')}</small><b>${esc(destLabel)}</b></div>
+            </div>
+            <div class="row" style="margin:0 24px 12px">
+              <span class="chip gold">${ic('user', 13, 2.3)}လက်ခံသူ: ${esc(sp.recipient_name)}</span>
+              <span class="chip">${ic('building', 13, 2.3)}${esc(hubLabel)}</span>
+              <span class="chip">${ic('truck', 13, 2.3)}ကားလမ်း</span>
+            </div>
+            <div class="pad" style="padding-top:8px">
+              <div class="row between" style="margin-bottom:14px">
+                <h2 class="h2">${t('history')}</h2>
+                <button class="btn sm line" data-act="copy" data-v="${esc(trackUrl(sp.tracking_number))}">${ic('copy', 16)}${t('copyLink')}</button>
+              </div>
+              <ol class="tl">${timelineSteps.map((e, n) => `<li style="animation-delay:${n * .07}s">${tile(e.icon, e.color, 21)}<div><b>${esc(e.title)}</b><span class="muted">${esc(e.where)} · ${e.time}</span></div></li>`).join('')}</ol>
+            </div>
           </section>`;
+
+          // ကားလေး Progress Bar ပေါ်တွင် ရွေ့လျားသည့် Animation စတင်ခြင်း
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              const prog = document.getElementById('sb-prog');
+              if (prog) prog.style.setProperty('--p', `${(sIdx / 5) * 100}%`);
+            });
+          });
         } else if (!p) {
           box.innerHTML = `<p class="note">❌ ဘောင်ချာနံပါတ် "${esc(v)}" ကို စနစ်ထဲတွင် ရှာမတွေ့ပါရှင်။</p>`;
         }
@@ -168,4 +225,5 @@ P.label = arg => {
   if (!list.length) return `<p class="note">${t('notFound')}</p>`;
   return `<div class="stack"><div class="row noprint" style="justify-content:center"><button class="btn gold" data-act="print">${ic('print', 18)}${t('printLabel')}</button><button class="btn line" data-act="back">${t('back')}</button></div>${list.map(labelHTML).join('')}</div>`;
 };
+
 
