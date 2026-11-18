@@ -165,7 +165,7 @@ app.post('/webhook/pickup-sync', async (req, res) => {
   }
 });
 
-// Staff / Delivery / Admin မှ Status ပြောင်းလဲတိုင်း Supabase parcels ဇယားကို Live Update လုပ်ပေးသည့် API
+// Staff / Delivery / Admin မှ Status ပြောင်းလဲတိုင်း Supabase parcels နှင့် pickup_requests ကို Live Update လုပ်ပေးသည့် API
 app.post('/webhook/status-sync', async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   const queryFn = (db && db.query) ? db.query : (db && db.pool ? db.pool.query.bind(db.pool) : null);
@@ -177,12 +177,12 @@ app.post('/webhook/status-sync', async (req, res) => {
     const trackingNo = (d.no || '').trim().toUpperCase();
     if (!trackingNo) return res.status(400).json({ success: false, message: 'Missing tracking number' });
 
+    const rawStatus = d.status || '';
     const statusText = d.statusText || 'အခြေအနေ ပြောင်းလဲပြီး';
     const branchName = d.branchName || '';
     const finalStatus = branchName ? `${statusText} (${branchName})` : statusText;
+    const rawHub = (d.branchId || 'YGN').toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 10) || 'YGN';
 
-    // နိုင်ငံတကာနှင့် ပြည်တွင်း Hub ID များကို hubs ဇယားတွင် ရှိနေစေရန် အလိုအလျောက် စစ်ဆေးထည့်သွင်းခြင်း
-    const rawHub = (d.branchId || 'YGN').toUpperCase().slice(0, 10);
     if (branchName) {
       await queryFn(
         `INSERT INTO hubs (id, name, city) VALUES ($1, $2, $3)
@@ -197,6 +197,15 @@ app.post('/webhook/status-sync', async (req, res) => {
        WHERE UPPER(TRIM(tracking_number)) = $3`,
       [finalStatus, rawHub, trackingNo]
     );
+
+    // pickup_requests ဇယားထဲမှ Status ကိုပါ တစ်ပါတည်း Update လုပ်ပေးခြင်း
+    if (d.senderPhone) {
+      const reqStatus = rawStatus === 'delivered' ? 'DELIVERED' : rawStatus === 'cancelled' ? 'CANCELLED' : 'ACCEPTED';
+      await queryFn(
+        `UPDATE pickup_requests SET status = $1 WHERE sender_phone = $2 AND status = 'PENDING'`,
+        [reqStatus, d.senderPhone]
+      );
+    }
 
     return res.status(200).json({ success: true, trackingNo, status: finalStatus });
   } catch (err) {
@@ -421,5 +430,6 @@ async function sendViberMessage(receiverId, text) {
 app.use(express.static(path.join(__dirname, '../')));
 
 module.exports = app;
+
 
 

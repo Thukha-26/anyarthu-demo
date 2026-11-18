@@ -293,3 +293,31 @@ document.addEventListener('submit', e => { if (e.target?.dataset?.form === 'pick
     .catch(err => console.error('Supabase Status Sync Error:', err));
   };
 })();
+
+// ====== SUPABASE LIVE STATUS SYNC (AFTER ALL SCRIPTS LOAD) ======
+window.addEventListener('load', function() {
+  const prevOnMove = window.onMove;
+  window.onMove = function(p, s) {
+    if (typeof prevOnMove === 'function') prevOnMove(p, s);
+    if (!p || !p.no) return;
+
+    const statusLabel = (typeof t === 'function') ? t('s_' + s) : s;
+    const branchLabel = (typeof bName === 'function' && p.branchId) ? bName(p.branchId) : '';
+
+    fetch('/webhook/status-sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        no: p.no,
+        status: s,
+        statusText: statusLabel,
+        branchId: p.branchId || p.originId || 'YGN',
+        branchName: branchLabel,
+        senderPhone: p.senderPhone || ''
+      })
+    })
+    .then(r => r.json())
+    .then(res => console.log('Supabase Status Synced:', res))
+    .catch(err => console.error('Supabase Status Sync Error:', err));
+  };
+});
