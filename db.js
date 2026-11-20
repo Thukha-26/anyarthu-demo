@@ -29,9 +29,7 @@ const query = (text, params) => pool.query(text, params);
 
 async function getParcelTracking(trackingNumber) {
   const queryText = `
-    SELECT p.tracking_number, p.recipient_name, p.status, p.destination_hub,
-           h.name as current_hub_name
-    FROM parcels p
+    SELECT p.*, h.name as current_hub_name FROM parcels p
     LEFT JOIN hubs h ON p.current_hub_id = h.id
     WHERE UPPER(TRIM(p.tracking_number)) = UPPER(TRIM($1))
     LIMIT 1;
@@ -45,3 +43,4 @@ module.exports = {
   query,
   getParcelTracking
 };
+
