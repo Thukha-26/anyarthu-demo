@@ -281,7 +281,7 @@ function formatTrackingReply(parcel, rawCode) {
   const receiver = parcel.recipient_name || '-';
   const rawAddr = (parcel.recipient_address || '').trim();
   const destHub = (parcel.destination_hub || '').trim();
-  const deliveryAddr = (rawAddr && rawAddr !== '-') ? rawAddr : (destHub || '-');
+  const deliveryAddr = (rawAddr && rawAddr !== '-' && rawAddr !== 'NULL') ? rawAddr : (destHub || '-');
   const hubName = (parcel.current_hub_name || '').trim();
 
   let cleanStatus = (parcel.status || '').trim();
@@ -427,6 +427,8 @@ async function sendViberMessage(receiverId, text) {
 app.use(express.static(path.join(__dirname, '../')));
 
 module.exports = app;
+
+
 
 
 
